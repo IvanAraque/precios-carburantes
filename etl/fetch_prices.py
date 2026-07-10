@@ -1,3 +1,4 @@
+import json
 import os
 from datetime import datetime, timezone
 
@@ -85,6 +86,35 @@ def agregar(df, fecha):
     return nacional, provincias, marcas
 
 
+def exportar_municipios(df, fecha, ruta):
+    # json compacto para el buscador de la web: solo columnas necesarias,
+    # una entrada por municipio, estaciones como listas posicionales
+    precios = list(PRODUCTOS.values())
+    df = df.dropna(subset=["lat", "lon"]).copy()
+    df["clave"] = df["municipio"].str.strip() + " (" + df["provincia"] + ")"
+
+    municipios = {}
+    for clave, grupo in df.groupby("clave", sort=True):
+        municipios[clave] = [
+            [
+                fila.rotulo,
+                fila.direccion,
+                round(fila.lat, 5),
+                round(fila.lon, 5),
+                *[None if pd.isna(v) else round(v, 3) for v in [getattr(fila, p) for p in precios]],
+            ]
+            for fila in grupo.itertuples()
+        ]
+
+    salida = {
+        "actualizado": fecha,
+        "columnas": ["rotulo", "direccion", "lat", "lon", *precios],
+        "municipios": municipios,
+    }
+    with open(ruta, "w", encoding="utf-8") as f:
+        json.dump(salida, f, ensure_ascii=False, separators=(",", ":"))
+
+
 def anexar(df, ruta):
     # acumula histórico, reemplaza la fecha de hoy si ya existe
     if os.path.exists(ruta):
@@ -107,6 +137,8 @@ def main():
     anexar(nacional, "docs/data/nacional.csv")
     anexar(provincias, "docs/data/provincias.csv")
     anexar(marcas, "docs/data/marcas.csv")
+
+    exportar_municipios(df, fecha, "docs/data/estaciones.json")
 
     print(f"ok: {len(df)} estaciones procesadas ({fecha})")
 
