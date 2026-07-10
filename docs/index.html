@@ -101,6 +101,64 @@
     color: var(--texto-suave);
     font-size: 14px;
   }
+  /* buscador por municipio */
+  .buscador { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+  .autocompletar { position: relative; flex: 1 1 260px; }
+  .autocompletar input {
+    width: 100%;
+    background: var(--panel);
+    color: var(--texto);
+    border: 1px solid var(--borde);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-family: "Chivo Mono", monospace;
+    font-size: 13px;
+  }
+  .autocompletar input:focus-visible { outline: 2px solid var(--led-95); }
+  .autocompletar ul {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0; right: 0;
+    z-index: 10;
+    list-style: none;
+    background: var(--panel);
+    border: 1px solid var(--borde);
+    border-radius: 6px;
+    max-height: 260px;
+    overflow-y: auto;
+    box-shadow: 0 12px 24px rgba(0,0,0,.45);
+  }
+  .autocompletar li {
+    padding: 8px 12px;
+    font-family: "Chivo Mono", monospace;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .autocompletar li.activo, .autocompletar li:hover { background: var(--borde); }
+  .autocompletar li small { color: var(--texto-suave); }
+
+  .tabla-estaciones { width: 100%; border-collapse: collapse; }
+  .tabla-estaciones th {
+    font-family: "Chivo Mono", monospace;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--texto-suave);
+    text-align: left;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--borde);
+  }
+  .tabla-estaciones td { padding: 9px 10px; font-size: 14px; border-bottom: 1px solid var(--borde); }
+  .tabla-estaciones tr:last-child td { border-bottom: none; }
+  .tabla-estaciones .num { font-family: "Chivo Mono", monospace; color: var(--texto-suave); }
+  .tabla-estaciones .precio-celda { font-family: "Chivo Mono", monospace; font-weight: 600; white-space: nowrap; }
+  .tabla-estaciones tr.mas-barata .precio-celda { text-shadow: 0 0 14px currentColor; }
+  .tabla-estaciones .direccion { color: var(--texto-suave); font-size: 13px; }
+  .tabla-estaciones a { color: var(--led-95); font-family: "Chivo Mono", monospace; font-size: 12px; text-decoration: none; }
+  .tabla-estaciones a:hover { text-decoration: underline; }
+  .panel-tabla { background: var(--panel); border: 1px solid var(--borde); border-radius: 10px; padding: 8px 14px; overflow-x: auto; }
+  .nota-buscador { font-family: "Chivo Mono", monospace; font-size: 12px; color: var(--texto-suave); margin-top: 10px; }
+
   footer { font-size: 12px; color: var(--texto-suave); }
   footer a { color: var(--led-95); }
 </style>
@@ -114,6 +172,20 @@
   </header>
 
   <div class="totem" id="totem"></div>
+
+  <section>
+    <h2>Gasolinera más barata por municipio</h2>
+    <p class="descripcion">Escribe tu municipio y compara las 10 estaciones más baratas del último snapshot.</p>
+    <div class="buscador">
+      <div class="autocompletar">
+        <input id="input-municipio" type="text" placeholder="municipio, p. ej. teruel" autocomplete="off"
+               role="combobox" aria-expanded="false" aria-controls="sugerencias-municipio">
+        <ul id="sugerencias-municipio" role="listbox" hidden></ul>
+      </div>
+      <select id="producto-buscador" aria-label="producto"></select>
+    </div>
+    <div id="resultado-buscador"></div>
+  </section>
 
   <section>
     <h2>Evolución del precio medio nacional</h2>
@@ -243,7 +315,138 @@ function pintarProvincias(producto) {
   });
 }
 
+// --- buscador por municipio ---
+let estaciones = null; // {actualizado, columnas, municipios}
+let municipioElegido = null;
+let idxActivo = -1;
+
+const inputMunicipio = document.getElementById("input-municipio");
+const listaSugerencias = document.getElementById("sugerencias-municipio");
+const selectorBuscador = document.getElementById("producto-buscador");
+const resultado = document.getElementById("resultado-buscador");
+
+const normalizar = s => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
+
+async function cargarEstaciones() {
+  if (estaciones) return estaciones;
+  const r = await fetch("data/estaciones.json");
+  if (!r.ok) throw new Error("estaciones.json");
+  estaciones = await r.json();
+  return estaciones;
+}
+
+function sugerir(texto) {
+  const q = normalizar(texto.trim());
+  cerrarSugerencias();
+  if (!q || !estaciones) return;
+  const claves = Object.keys(estaciones.municipios);
+  const empiezan = [], contienen = [];
+  for (const clave of claves) {
+    const muni = normalizar(clave.slice(0, clave.lastIndexOf(" (")));
+    if (muni.startsWith(q)) empiezan.push(clave);
+    else if (muni.includes(q)) contienen.push(clave);
+    if (empiezan.length >= 12) break;
+  }
+  const opciones = [...empiezan, ...contienen].slice(0, 12);
+  if (!opciones.length) return;
+  listaSugerencias.innerHTML = opciones.map(clave => {
+    const corte = clave.lastIndexOf(" (");
+    return `<li role="option" data-clave="${clave.replace(/"/g, "&quot;")}">${clave.slice(0, corte)} <small>${clave.slice(corte + 1)}</small></li>`;
+  }).join("");
+  listaSugerencias.hidden = false;
+  inputMunicipio.setAttribute("aria-expanded", "true");
+  idxActivo = -1;
+}
+
+function cerrarSugerencias() {
+  listaSugerencias.hidden = true;
+  listaSugerencias.innerHTML = "";
+  inputMunicipio.setAttribute("aria-expanded", "false");
+  idxActivo = -1;
+}
+
+function elegirMunicipio(clave) {
+  municipioElegido = clave;
+  inputMunicipio.value = clave.slice(0, clave.lastIndexOf(" ("));
+  cerrarSugerencias();
+  pintarResultado();
+}
+
+function pintarResultado() {
+  if (!municipioElegido || !estaciones) return;
+  const producto = selectorBuscador.value;
+  const col = estaciones.columnas.indexOf(producto);
+  const todas = estaciones.municipios[municipioElegido] || [];
+  const conPrecio = todas
+    .filter(e => e[col] != null)
+    .sort((a, b) => a[col] - b[col])
+    .slice(0, 10);
+
+  if (!conPrecio.length) {
+    resultado.innerHTML = `<div class="vacio">Ninguna estación de ${municipioElegido} tiene precio de ${NOMBRES[producto]} en el último snapshot.</div>`;
+    return;
+  }
+
+  const color = COLORES[producto];
+  const filas = conPrecio.map(([rotulo, direccion, lat, lon, ...precios], i) => `
+    <tr${i === 0 ? ' class="mas-barata"' : ""}>
+      <td class="num">${i + 1}</td>
+      <td>${rotulo}</td>
+      <td class="direccion">${direccion}</td>
+      <td class="precio-celda" style="color:${color}">${conPrecio[i][col].toFixed(3)} €/L</td>
+      <td><a href="https://www.google.com/maps/search/?api=1&query=${lat}%2C${lon}" target="_blank" rel="noopener">mapa ↗</a></td>
+    </tr>`).join("");
+
+  resultado.innerHTML = `
+    <div class="panel-tabla">
+      <table class="tabla-estaciones">
+        <thead><tr><th></th><th>rótulo</th><th>dirección</th><th>${NOMBRES[producto]}</th><th></th></tr></thead>
+        <tbody>${filas}</tbody>
+      </table>
+    </div>
+    <p class="nota-buscador">${conPrecio.length} de ${todas.length} estaciones en ${municipioElegido} · snapshot del ${estaciones.actualizado}</p>`;
+}
+
+function initBuscador() {
+  selectorBuscador.innerHTML = Object.entries(NOMBRES)
+    .map(([k, v]) => `<option value="${k}">${v}</option>`)
+    .join("");
+  selectorBuscador.addEventListener("change", pintarResultado);
+
+  inputMunicipio.addEventListener("focus", () => { cargarEstaciones().catch(() => {}); });
+  inputMunicipio.addEventListener("input", async () => {
+    try { await cargarEstaciones(); } catch { return; }
+    sugerir(inputMunicipio.value);
+  });
+  inputMunicipio.addEventListener("keydown", e => {
+    const items = [...listaSugerencias.querySelectorAll("li")];
+    if (e.key === "Escape") return cerrarSugerencias();
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const elegido = items[idxActivo] || items[0];
+      if (elegido) elegirMunicipio(elegido.dataset.clave);
+      return;
+    }
+    if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+    if (!items.length) return;
+    e.preventDefault();
+    idxActivo = e.key === "ArrowDown"
+      ? (idxActivo + 1) % items.length
+      : (idxActivo - 1 + items.length) % items.length;
+    items.forEach((li, i) => li.classList.toggle("activo", i === idxActivo));
+    items[idxActivo].scrollIntoView({ block: "nearest" });
+  });
+  listaSugerencias.addEventListener("mousedown", e => {
+    const li = e.target.closest("li");
+    if (li) elegirMunicipio(li.dataset.clave);
+  });
+  document.addEventListener("click", e => {
+    if (!e.target.closest(".autocompletar")) cerrarSugerencias();
+  });
+}
+
 async function init() {
+  initBuscador();
   try {
     [nacional, provincias] = await Promise.all([
       cargar("data/nacional.csv"),

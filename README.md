@@ -31,6 +31,7 @@ etl/fetch_prices.py ──► descarga API ──► limpieza (pandas)
 | `docs/data/nacional.csv` | Media, mediana, min, max por producto y día | producto × día |
 | `docs/data/provincias.csv` | Precio medio por provincia, producto y día | provincia × producto × día |
 | `docs/data/marcas.csv` | Precio medio de las 15 marcas con más estaciones | marca × producto × día |
+| `docs/data/estaciones.json` | Estaciones con dirección, coordenadas y precios, agrupadas por municipio; alimenta el buscador de la web (se sobreescribe, no acumula histórico) | municipio |
 
 ## Puesta en marcha
 
