@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Precios de carburantes en España</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chivo+Mono:wght@400;600&family=Archivo:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --asfalto: #15181e;
+    --panel: #1d222b;
+    --borde: #2b323e;
+    --texto: #e8eaee;
+    --texto-suave: #8b93a1;
+    --led-95: #6fe08c;
+    --led-diesel: #f5b942;
+    --led-98: #dfe6f0;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--asfalto);
+    color: var(--texto);
+    font-family: "Archivo", system-ui, sans-serif;
+    min-height: 100vh;
+  }
+  .contenedor { max-width: 1000px; margin: 0 auto; padding: 32px 20px 64px; }
+
+  header { margin-bottom: 28px; }
+  .eyebrow {
+    font-family: "Chivo Mono", monospace;
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--texto-suave);
+  }
+  h1 { font-size: 28px; font-weight: 700; margin-top: 6px; }
+  .fecha { font-family: "Chivo Mono", monospace; font-size: 13px; color: var(--texto-suave); margin-top: 4px; }
+
+  /* tótem de precios, como el panel de una gasolinera */
+  .totem {
+    background: var(--panel);
+    border: 1px solid var(--borde);
+    border-radius: 10px;
+    padding: 22px 24px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 18px;
+    margin-bottom: 36px;
+  }
+  .totem .producto { border-left: 3px solid var(--borde); padding-left: 14px; }
+  .totem .nombre {
+    font-family: "Chivo Mono", monospace;
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--texto-suave);
+  }
+  .totem .precio {
+    font-family: "Chivo Mono", monospace;
+    font-size: 40px;
+    font-weight: 600;
+    line-height: 1.2;
+    text-shadow: 0 0 18px currentColor;
+  }
+  .totem .precio small { font-size: 16px; color: var(--texto-suave); text-shadow: none; }
+  .p-95 .precio { color: var(--led-95); }
+  .p-98 .precio { color: var(--led-98); }
+  .p-diesel .precio { color: var(--led-diesel); }
+
+  section { margin-bottom: 40px; }
+  h2 { font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+  .descripcion { font-size: 14px; color: var(--texto-suave); margin-bottom: 16px; }
+
+  select {
+    background: var(--panel);
+    color: var(--texto);
+    border: 1px solid var(--borde);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-family: "Chivo Mono", monospace;
+    font-size: 13px;
+    margin-bottom: 16px;
+  }
+  select:focus-visible { outline: 2px solid var(--led-95); }
+
+  .grafico {
+    background: var(--panel);
+    border: 1px solid var(--borde);
+    border-radius: 10px;
+    padding: 18px;
+    height: 340px;
+  }
+  .vacio {
+    background: var(--panel);
+    border: 1px dashed var(--borde);
+    border-radius: 10px;
+    padding: 40px;
+    text-align: center;
+    color: var(--texto-suave);
+    font-size: 14px;
+  }
+  footer { font-size: 12px; color: var(--texto-suave); }
+  footer a { color: var(--led-95); }
+</style>
+</head>
+<body>
+<div class="contenedor">
+  <header>
+    <div class="eyebrow">datos abiertos · ministerio para la transición ecológica</div>
+    <h1>Precios de carburantes en España</h1>
+    <div class="fecha" id="fecha-actualizacion">cargando datos…</div>
+  </header>
+
+  <div class="totem" id="totem"></div>
+
+  <section>
+    <h2>Evolución del precio medio nacional</h2>
+    <p class="descripcion">Media diaria calculada sobre todas las estaciones de servicio que reportan precio.</p>
+    <label for="selector-producto" class="eyebrow">producto</label><br>
+    <select id="selector-producto"></select>
+    <div class="grafico"><canvas id="chart-evolucion"></canvas></div>
+  </section>
+
+  <section>
+    <h2>Provincias más baratas y más caras</h2>
+    <p class="descripcion">Precio medio por provincia en la última fecha disponible, para el producto seleccionado arriba.</p>
+    <div class="grafico"><canvas id="chart-provincias"></canvas></div>
+  </section>
+
+  <footer>
+    Fuente: <a href="https://sedeaplicaciones.minetur.gob.es/ServiciosRESTCarburantes/PreciosCarburantes/EstacionesTerrestres/">API de precios de carburantes</a> (MITECO).
+    Datos actualizados a diario mediante GitHub Actions.
+  </footer>
+</div>
+
+<script>
+const NOMBRES = {
+  gasolina_95_e5: "Gasolina 95 E5",
+  gasolina_98_e5: "Gasolina 98 E5",
+  gasoleo_a: "Gasóleo A",
+  gasoleo_premium: "Gasóleo Premium",
+  glp: "GLP",
+};
+const COLORES = {
+  gasolina_95_e5: "#6fe08c",
+  gasolina_98_e5: "#dfe6f0",
+  gasoleo_a: "#f5b942",
+  gasoleo_premium: "#e08a4a",
+  glp: "#7ab8f5",
+};
+
+let nacional = [], provincias = [];
+let chartEvolucion, chartProvincias;
+
+function parseCSV(texto) {
+  const lineas = texto.trim().split("\n");
+  const cabecera = lineas[0].split(",");
+  return lineas.slice(1).map(l => {
+    const valores = l.split(",");
+    return Object.fromEntries(cabecera.map((c, i) => [c, valores[i]]));
+  });
+}
+
+async function cargar(ruta) {
+  const r = await fetch(ruta);
+  if (!r.ok) throw new Error(ruta);
+  return parseCSV(await r.text());
+}
+
+function pintarTotem() {
+  const ultimaFecha = nacional.at(-1)?.fecha;
+  const hoy = nacional.filter(f => f.fecha === ultimaFecha);
+  const clases = { gasolina_95_e5: "p-95", gasolina_98_e5: "p-98", gasoleo_a: "p-diesel", gasoleo_premium: "p-diesel", glp: "p-98" };
+  document.getElementById("totem").innerHTML = hoy
+    .filter(f => NOMBRES[f.producto])
+    .map(f => `
+      <div class="producto ${clases[f.producto]}">
+        <div class="nombre">${NOMBRES[f.producto]}</div>
+        <div class="precio">${Number(f.media).toFixed(3)}<small> €/L</small></div>
+      </div>`)
+    .join("");
+  document.getElementById("fecha-actualizacion").textContent = `última actualización: ${ultimaFecha}`;
+}
+
+function pintarEvolucion(producto) {
+  const serie = nacional.filter(f => f.producto === producto);
+  const ctx = document.getElementById("chart-evolucion");
+  chartEvolucion?.destroy();
+  chartEvolucion = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: serie.map(f => f.fecha),
+      datasets: [{
+        label: `${NOMBRES[producto]} (media €/L)`,
+        data: serie.map(f => Number(f.media)),
+        borderColor: COLORES[producto],
+        backgroundColor: COLORES[producto] + "22",
+        fill: true,
+        tension: 0.25,
+        pointRadius: serie.length > 60 ? 0 : 3,
+      }],
+    },
+    options: {
+      maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: "#e8eaee" } } },
+      scales: {
+        x: { ticks: { color: "#8b93a1" }, grid: { color: "#2b323e" } },
+        y: { ticks: { color: "#8b93a1" }, grid: { color: "#2b323e" } },
+      },
+    },
+  });
+}
+
+function pintarProvincias(producto) {
+  const ultimaFecha = provincias.at(-1)?.fecha;
+  const filas = provincias
+    .filter(f => f.fecha === ultimaFecha && f.producto === producto)
+    .sort((a, b) => a.media - b.media);
+  const seleccion = [...filas.slice(0, 5), ...filas.slice(-5)];
+  const ctx = document.getElementById("chart-provincias");
+  chartProvincias?.destroy();
+  chartProvincias = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: seleccion.map(f => f.provincia),
+      datasets: [{
+        label: `media €/L (${ultimaFecha})`,
+        data: seleccion.map(f => Number(f.media)),
+        backgroundColor: seleccion.map((_, i) => i < 5 ? COLORES[producto] : "#5a6373"),
+      }],
+    },
+    options: {
+      indexAxis: "y",
+      maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: "#e8eaee" } } },
+      scales: {
+        x: { ticks: { color: "#8b93a1" }, grid: { color: "#2b323e" } },
+        y: { ticks: { color: "#8b93a1" }, grid: { display: false } },
+      },
+    },
+  });
+}
+
+async function init() {
+  try {
+    [nacional, provincias] = await Promise.all([
+      cargar("data/nacional.csv"),
+      cargar("data/provincias.csv"),
+    ]);
+  } catch {
+    document.querySelector(".contenedor").insertAdjacentHTML("beforeend",
+      '<div class="vacio">Todavía no hay datos. Lanza el workflow "etl diario" desde la pestaña Actions para generar el primer snapshot.</div>');
+    document.getElementById("fecha-actualizacion").textContent = "sin datos";
+    return;
+  }
+
+  const selector = document.getElementById("selector-producto");
+  selector.innerHTML = Object.entries(NOMBRES)
+    .map(([k, v]) => `<option value="${k}">${v}</option>`)
+    .join("");
+  selector.addEventListener("change", () => {
+    pintarEvolucion(selector.value);
+    pintarProvincias(selector.value);
+  });
+
+  pintarTotem();
+  pintarEvolucion(selector.value);
+  pintarProvincias(selector.value);
+}
+
+init();
+</script>
+</body>
+</html>
