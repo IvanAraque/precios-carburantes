@@ -1,5 +1,6 @@
 import json
 import os
+import time
 from datetime import datetime, timezone
 
 import pandas as pd
@@ -30,11 +31,17 @@ COLUMNAS = {
 }
 
 
-def descargar():
-    r = requests.get(URL, headers={"Accept": "application/json"}, timeout=120)
-    r.raise_for_status()
-    data = r.json()
-    return pd.DataFrame(data["ListaEESSPrecio"])
+def descargar(intentos=4, espera=90):
+    for i in range(intentos):
+        try:
+            r = requests.get(URL, headers={"Accept": "application/json"}, timeout=60)
+            r.raise_for_status()
+            return pd.DataFrame(r.json()["ListaEESSPrecio"])
+        except requests.RequestException as e:
+            if i == intentos - 1:
+                raise
+            print(f"intento {i + 1} fallido ({type(e).__name__}), reintento en {espera}s")
+            time.sleep(espera)
 
 
 def limpiar(df):
