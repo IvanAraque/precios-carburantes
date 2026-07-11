@@ -152,6 +152,30 @@
   .tabla-estaciones tr:last-child td { border-bottom: none; }
   .tabla-estaciones .num { font-family: "Chivo Mono", monospace; color: var(--texto-suave); }
   .tabla-estaciones .precio-celda { font-family: "Chivo Mono", monospace; font-weight: 600; white-space: nowrap; }
+  .tabla-estaciones .diferencia { color: var(--texto-suave); font-weight: 400; font-size: 11px; margin-left: 6px; }
+  #filtro-estacion {
+    flex: 0 1 220px;
+    background: var(--panel);
+    color: var(--texto);
+    border: 1px solid var(--borde);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-family: "Chivo Mono", monospace;
+    font-size: 13px;
+  }
+  #filtro-estacion:focus-visible { outline: 2px solid var(--led-95); }
+  .boton-ver {
+    background: none;
+    color: var(--led-95);
+    border: 1px dashed var(--borde);
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-family: "Chivo Mono", monospace;
+    font-size: 12px;
+    cursor: pointer;
+    margin-top: 12px;
+  }
+  .boton-ver:hover { border-color: var(--led-95); }
   .tabla-estaciones tr.mas-barata .precio-celda { text-shadow: 0 0 14px currentColor; }
   .tabla-estaciones .direccion { color: var(--texto-suave); font-size: 13px; }
   .tabla-estaciones a { color: var(--led-95); font-family: "Chivo Mono", monospace; font-size: 12px; text-decoration: none; }
@@ -183,6 +207,7 @@
         <ul id="sugerencias-municipio" role="listbox" hidden></ul>
       </div>
       <select id="producto-buscador" aria-label="producto"></select>
+      <input id="filtro-estacion" type="text" placeholder="filtrar: rótulo o calle" autocomplete="off" hidden>
     </div>
     <div id="resultado-buscador"></div>
   </section>
@@ -323,7 +348,9 @@ let idxActivo = -1;
 const inputMunicipio = document.getElementById("input-municipio");
 const listaSugerencias = document.getElementById("sugerencias-municipio");
 const selectorBuscador = document.getElementById("producto-buscador");
+const filtroEstacion = document.getElementById("filtro-estacion");
 const resultado = document.getElementById("resultado-buscador");
+let verTodas = false;
 
 const normalizar = s => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
 
@@ -369,6 +396,9 @@ function elegirMunicipio(clave) {
   municipioElegido = clave;
   inputMunicipio.value = clave.slice(0, clave.lastIndexOf(" ("));
   cerrarSugerencias();
+  verTodas = false;
+  filtroEstacion.value = "";
+  filtroEstacion.hidden = false;
   pintarResultado();
 }
 
@@ -377,25 +407,44 @@ function pintarResultado() {
   const producto = selectorBuscador.value;
   const col = estaciones.columnas.indexOf(producto);
   const todas = estaciones.municipios[municipioElegido] || [];
-  const conPrecio = todas
+  const ranking = todas
     .filter(e => e[col] != null)
     .sort((a, b) => a[col] - b[col])
-    .slice(0, 10);
+    .map((e, i) => ({ e, pos: i + 1 }));
 
-  if (!conPrecio.length) {
+  if (!ranking.length) {
     resultado.innerHTML = `<div class="vacio">Ninguna estación de ${municipioElegido} tiene precio de ${NOMBRES[producto]} en el último snapshot.</div>`;
     return;
   }
 
+  const q = normalizar(filtroEstacion.value.trim());
+  let visibles = q
+    ? ranking.filter(({ e }) => normalizar(e[0] + " " + e[1]).includes(q))
+    : (verTodas ? ranking : ranking.slice(0, 10));
+
+  if (!visibles.length) {
+    resultado.innerHTML = `<div class="vacio">Ninguna estación coincide con «${filtroEstacion.value.trim()}» en ${municipioElegido}.</div>`;
+    return;
+  }
+
   const color = COLORES[producto];
-  const filas = conPrecio.map(([rotulo, direccion, lat, lon, ...precios], i) => `
-    <tr${i === 0 ? ' class="mas-barata"' : ""}>
-      <td class="num">${i + 1}</td>
+  const minimo = ranking[0].e[col];
+  const filas = visibles.map(({ e: [rotulo, direccion, lat, lon, ...precios], pos }) => {
+    const precio = precios[col - 4];
+    const dif = precio - minimo;
+    return `
+    <tr${pos === 1 ? ' class="mas-barata"' : ""}>
+      <td class="num">${pos}</td>
       <td>${rotulo}</td>
       <td class="direccion">${direccion}</td>
-      <td class="precio-celda" style="color:${color}">${conPrecio[i][col].toFixed(3)} €/L</td>
+      <td class="precio-celda" style="color:${color}">${precio.toFixed(3)} €/L${dif > 0 ? `<span class="diferencia">+${dif.toFixed(3)}</span>` : ""}</td>
       <td><a href="https://www.google.com/maps/search/?api=1&query=${lat}%2C${lon}" target="_blank" rel="noopener">mapa ↗</a></td>
-    </tr>`).join("");
+    </tr>`;
+  }).join("");
+
+  const boton = !q && ranking.length > 10
+    ? `<button class="boton-ver" id="boton-ver">${verTodas ? "ver solo el top 10" : `ver las ${ranking.length} estaciones`}</button>`
+    : "";
 
   resultado.innerHTML = `
     <div class="panel-tabla">
@@ -404,7 +453,13 @@ function pintarResultado() {
         <tbody>${filas}</tbody>
       </table>
     </div>
-    <p class="nota-buscador">${conPrecio.length} de ${todas.length} estaciones en ${municipioElegido} · snapshot del ${estaciones.actualizado}</p>`;
+    ${boton}
+    <p class="nota-buscador">${visibles.length} de ${ranking.length} estaciones con precio en ${municipioElegido} · snapshot del ${estaciones.actualizado}</p>`;
+
+  document.getElementById("boton-ver")?.addEventListener("click", () => {
+    verTodas = !verTodas;
+    pintarResultado();
+  });
 }
 
 function initBuscador() {
@@ -412,6 +467,7 @@ function initBuscador() {
     .map(([k, v]) => `<option value="${k}">${v}</option>`)
     .join("");
   selectorBuscador.addEventListener("change", pintarResultado);
+  filtroEstacion.addEventListener("input", pintarResultado);
 
   inputMunicipio.addEventListener("focus", () => { cargarEstaciones().catch(() => {}); });
   inputMunicipio.addEventListener("input", async () => {
