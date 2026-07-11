@@ -24,7 +24,7 @@ COLUMNAS = {
     "Dirección": "direccion",
     "C.P.": "cp",
     "Latitud": "lat",
-    "Longitud (WGS 84)": "lon",
+    "Longitud (WGS84)": "lon",
     "Horario": "horario",
     **PRODUCTOS,
 }
@@ -38,6 +38,8 @@ def descargar():
 
 
 def limpiar(df):
+    # la api ha usado ambas variantes del nombre de la longitud
+    df = df.rename(columns={"Longitud (WGS 84)": "Longitud (WGS84)"})
     df = df[list(COLUMNAS)].rename(columns=COLUMNAS)
     numericas = list(PRODUCTOS.values()) + ["lat", "lon"]
     for col in numericas:
