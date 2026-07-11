@@ -2,7 +2,7 @@
 
 Pipeline ETL automatizado que descarga a diario los precios de las ~12.000 estaciones de servicio de España desde la [API de datos abiertos del MITECO](https://sedeaplicaciones.minetur.gob.es/ServiciosRESTCarburantes/PreciosCarburantes/EstacionesTerrestres/), los limpia, genera agregados históricos y los publica en un dashboard estático con GitHub Pages.
 
-**Dashboard:** https://TUUSUARIO.github.io/precios-carburantes/
+**Dashboard:** https://ivanaraque.github.io/precios-carburantes/
 
 ## Arquitectura
 
