@@ -154,6 +154,17 @@
   .tabla-estaciones .precio-celda { font-family: "Chivo Mono", monospace; font-weight: 600; white-space: nowrap; }
   .tabla-estaciones .diferencia { color: var(--texto-suave); font-weight: 400; font-size: 11px; margin-left: 6px; }
   .tabla-estaciones .ahorro { font-family: "Chivo Mono", monospace; font-size: 12px; color: var(--texto-suave); white-space: nowrap; }
+  .tabla-estaciones .dist { font-family: "Chivo Mono", monospace; font-size: 12px; color: var(--texto); white-space: nowrap; text-align: right; padding-right: 26px; }
+  /* anchos estables: que cambiar de producto no recoloque las columnas */
+  @media (min-width: 700px) {
+    .tabla-estaciones { table-layout: fixed; }
+    .tabla-estaciones th.c-num { width: 34px; }
+    .tabla-estaciones th.c-rotulo { width: 150px; }
+    .tabla-estaciones th.c-km { width: 82px; padding-right: 26px; }
+    .tabla-estaciones th.c-precio { width: 124px; }
+    .tabla-estaciones th.c-ahorro { width: 138px; }
+    .tabla-estaciones th.c-mapa { width: 88px; }
+  }
   #filtro-estacion {
     flex: 0 1 220px;
     background: var(--panel);
@@ -556,7 +567,8 @@ function pintarResultado() {
   const filas = visibles.map(({ e: [rotulo, direccion, lat, lon, ...precios], pos, muni, d, ahorro }) => {
     const precio = precios[col - 4];
     const dif = precio - minimo;
-    const extra = muni ? `<span class="direccion-extra"> · ${muni} · a ${d.toFixed(1).replace(".", ",")} km</span>` : "";
+    const extra = muni ? `<span class="direccion-extra"> · ${muni}</span>` : "";
+    const celdaDist = muni ? `<td class="dist">${d.toFixed(1).replace(".", ",")} km</td>` : "";
     // en modo cercanía: columna de ahorro por depósito (el signo habla, la cabecera explica);
     // en modo municipio: diferencia de precio junto al importe, como siempre
     const celdaAhorro = ahorro !== undefined
@@ -568,6 +580,7 @@ function pintarResultado() {
       <td class="num">${pos}</td>
       <td>${rotulo}</td>
       <td class="direccion">${direccion}${extra}</td>
+      ${celdaDist}
       <td class="precio-celda" style="color:${color}">${precio.toFixed(3)} €/L${detalle}</td>
       ${celdaAhorro}
       <td><a href="https://www.google.com/maps/search/?api=1&query=${lat}%2C${lon}" target="_blank" rel="noopener">mapa ↗</a></td>
@@ -603,7 +616,7 @@ function pintarResultado() {
     ${cabecera}
     <div class="panel-tabla">
       <table class="tabla-estaciones">
-        <thead><tr><th></th><th>rótulo</th><th>dirección</th><th>${NOMBRES[producto]}</th>${fuente.tipo === "cerca" ? "<th>ahorro · llenar</th>" : ""}<th></th></tr></thead>
+        <thead><tr><th class="c-num"></th><th class="c-rotulo">rótulo</th><th>dirección</th>${fuente.tipo === "cerca" ? '<th class="c-km">km</th>' : ""}<th class="c-precio">${NOMBRES[producto]}</th>${fuente.tipo === "cerca" ? '<th class="c-ahorro">ahorro · llenar</th>' : ""}<th class="c-mapa"></th></tr></thead>
         <tbody>${filas}</tbody>
       </table>
     </div>
