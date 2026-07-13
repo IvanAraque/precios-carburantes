@@ -1,5 +1,7 @@
 import json
 import os
+import shutil
+import subprocess
 import time
 from datetime import datetime, timezone
 
@@ -7,6 +9,10 @@ import pandas as pd
 import requests
 
 URL = "https://sedeaplicaciones.minetur.gob.es/ServiciosRESTCarburantes/PreciosCarburantes/EstacionesTerrestres/"
+CABECERAS = {
+    "Accept": "application/json",
+    "User-Agent": "precios-carburantes-etl (https://github.com/IvanAraque/precios-carburantes)",
+}
 
 PRODUCTOS = {
     "Precio Gasolina 95 E5": "gasolina_95_e5",
@@ -31,16 +37,33 @@ COLUMNAS = {
 }
 
 
+def descargar_requests():
+    r = requests.get(URL, headers=CABECERAS, timeout=60)
+    r.raise_for_status()
+    return r.json()
+
+
+def descargar_curl():
+    # curl presenta otra huella tls: a veces pasa donde requests es rechazado
+    orden = ["curl", "-sS", "--fail", "--max-time", "120"]
+    for clave, valor in CABECERAS.items():
+        orden += ["-H", f"{clave}: {valor}"]
+    salida = subprocess.run(orden + [URL], capture_output=True, check=True)
+    return json.loads(salida.stdout)
+
+
 def descargar(intentos=4, espera=90):
+    metodos = [descargar_requests]
+    if shutil.which("curl"):
+        metodos.append(descargar_curl)
     for i in range(intentos):
+        metodo = metodos[i % len(metodos)]
         try:
-            r = requests.get(URL, headers={"Accept": "application/json"}, timeout=60)
-            r.raise_for_status()
-            return pd.DataFrame(r.json()["ListaEESSPrecio"])
-        except requests.RequestException as e:
+            return pd.DataFrame(metodo()["ListaEESSPrecio"])
+        except Exception as e:
             if i == intentos - 1:
                 raise
-            print(f"intento {i + 1} fallido ({type(e).__name__}), reintento en {espera}s")
+            print(f"intento {i + 1} ({metodo.__name__}) fallido ({type(e).__name__}), reintento en {espera}s")
             time.sleep(espera)
 
 
