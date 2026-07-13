@@ -2,7 +2,8 @@ name: etl diario
 
 on:
   schedule:
-    - cron: "30 5 * * *" # 7:30 en españa (verano)
+    - cron: "47 5 * * *" # 7:47 en españa (verano);
+    - cron: "47 10 * * *" # 12:47, respaldo
   workflow_dispatch: # permite lanzarlo a mano desde la pestaña actions
 
 permissions:
