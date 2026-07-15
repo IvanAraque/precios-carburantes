@@ -251,6 +251,56 @@
   }
   .nota-destacada b { color: var(--led-95); font-weight: 600; }
 
+  /* mapa de estaciones */
+  .mapa {
+    height: 360px;
+    margin-top: 16px;
+    border: 1px solid var(--borde);
+    border-radius: 10px;
+    background: var(--panel);
+    position: relative;
+    z-index: 0;
+  }
+  @media (max-width: 700px) { .mapa { height: 300px; } }
+  .mapa .leaflet-popup-content-wrapper, .mapa .leaflet-popup-tip {
+    background: var(--panel);
+    color: var(--texto);
+    box-shadow: 0 10px 24px rgba(0,0,0,.5);
+  }
+  .mapa .leaflet-popup-content { font-family: "Archivo", system-ui, sans-serif; font-size: 13px; line-height: 1.5; }
+  .mapa .leaflet-popup-content a { color: var(--led-95); }
+  .mapa .leaflet-popup-content .precio-popup { font-family: "Chivo Mono", monospace; font-weight: 600; }
+  .mapa .leaflet-popup-content .pos-popup {
+    font-family: "Chivo Mono", monospace;
+    font-size: 10px;
+    color: var(--texto-suave);
+    border: 1px solid var(--borde);
+    border-radius: 999px;
+    padding: 1px 6px;
+    vertical-align: 1px;
+  }
+  .mapa a.leaflet-popup-close-button { color: var(--texto-suave); }
+  .mapa .leaflet-tooltip {
+    background: var(--panel);
+    color: var(--texto);
+    border: 1px solid var(--borde);
+    font-family: "Chivo Mono", monospace;
+    font-size: 12px;
+    box-shadow: 0 6px 16px rgba(0,0,0,.45);
+  }
+  .mapa .leaflet-tooltip-top:before { border-top-color: var(--borde); }
+  .mapa .leaflet-tooltip .pista-clic { color: var(--texto-suave); font-size: 10px; }
+  .h-abierta { color: var(--led-95); }
+  .h-cerrada { color: #e0776f; }
+  .mapa .leaflet-bar a {
+    background: var(--panel);
+    color: var(--texto);
+    border-bottom: 1px solid var(--borde);
+  }
+  .mapa .leaflet-bar a:hover { background: var(--borde); }
+  .mapa .leaflet-control-attribution { background: rgba(21,24,30,.75) !important; color: var(--texto-suave) !important; font-size: 10px; }
+  .mapa .leaflet-control-attribution a { color: var(--texto-suave) !important; }
+
   footer { font-size: 12px; color: var(--texto-suave); }
   footer a { color: var(--led-95); }
 </style>
@@ -279,6 +329,7 @@
       <input id="filtro-estacion" type="text" placeholder="filtrar: rótulo o calle" autocomplete="off" hidden>
     </div>
     <div id="resultado-buscador"></div>
+    <div id="mapa-estaciones" class="mapa" hidden></div>
   </section>
 
   <section>
@@ -448,6 +499,144 @@ function recordar(clave) {
   try { localStorage.setItem("municipio", clave); } catch {}
 }
 
+// --- horarios ("L-D: 24H", "L-V: 06:00-22:00; S-D: 07:00-22:00"...) ---
+const DIAS_SEMANA = ["D", "L", "M", "X", "J", "V", "S"]; // getDay(): 0 = domingo
+
+// devuelve {siempre} | {abierta, hasta} | {abierta: false} | null si no es interpretable
+function estadoHorario(horario, ahora = new Date()) {
+  if (!horario) return null;
+  const hoy = ahora.getDay(), min = ahora.getHours() * 60 + ahora.getMinutes();
+  const cubiertos = new Set();
+  const tramosHoy = [], tramosVispera = []; // los de ayer pueden cruzar la medianoche
+  for (const seg of horario.toUpperCase().split(";")) {
+    const m = seg.trim().match(/^([LMXJVSD])(?:\s*-\s*([LMXJVSD]))?\s*:\s*(.+)$/);
+    if (!m) return null;
+    const desde = DIAS_SEMANA.indexOf(m[1]), hasta = DIAS_SEMANA.indexOf(m[2] || m[1]);
+    const dias = [];
+    for (let i = desde; ; i = (i + 1) % 7) { dias.push(i); if (i === hasta) break; }
+    dias.forEach(d => cubiertos.add(d));
+    const tramos = [];
+    if (/24\s*H/.test(m[3])) tramos.push([0, 1440]);
+    for (const t of m[3].matchAll(/(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})/g)) {
+      let a = +t[1] * 60 + +t[2];
+      let b = +t[3] * 60 + +t[4];
+      if (b <= a) b += 1440; // cruza la medianoche (06:00-00:00, 22:00-06:00…)
+      if (b - a >= 1439) { a = 0; b = 1440; } // 00:00-23:59 y equivalentes = todo el día
+      tramos.push([a, b]);
+    }
+    if (!tramos.length) return null;
+    if (dias.includes(hoy)) tramosHoy.push(...tramos);
+    if (dias.includes((hoy + 6) % 7)) tramosVispera.push(...tramos);
+  }
+  // horario de un solo día (p. ej. "L: 24H") suele ser un error de carga del
+  // surtidor: si hoy no es ese día, mejor no afirmar nada. con varios días
+  // declarados el hueco es deliberado (L-V sin fin de semana = cierra)
+  if (cubiertos.size === 1 && !cubiertos.has(hoy)) return null;
+
+  let hastaMin = null;
+  for (const [a, b] of tramosHoy) if (min >= a && min < b) hastaMin = Math.max(hastaMin ?? 0, b);
+  for (const [a, b] of tramosVispera) if (b > 1440 && min + 1440 >= a && min + 1440 < b) hastaMin = Math.max(hastaMin ?? 0, b - 1440);
+  if (hastaMin === null) return { abierta: false };
+  if (hastaMin - min >= 1439 || tramosHoy.some(([a, b]) => a === 0 && b === 1440)) return { siempre: true };
+  const h = Math.floor((hastaMin % 1440) / 60), mm = hastaMin % 60;
+  return { abierta: true, hasta: `${String(h).padStart(2, "0")}:${String(mm).padStart(2, "0")}` };
+}
+
+function etiquetaHorario(e) {
+  const idxHorario = estaciones.columnas.indexOf("horario");
+  if (idxHorario === -1) return "";
+  const estado = estadoHorario(e[idxHorario]);
+  if (!estado) return "";
+  if (estado.siempre) return '<span class="h-abierta">24 h</span>';
+  if (estado.abierta) return `<span class="h-abierta">hasta ${estado.hasta}</span>`;
+  return '<span class="h-cerrada">cerrada ahora</span>';
+}
+
+// --- mapa ---
+let mapa = null, capaMarcas = null, mapaClave = "";
+
+function cargarLeaflet() {
+  if (window.L) return Promise.resolve();
+  if (!cargarLeaflet.promesa) {
+    const css = document.createElement("link");
+    css.rel = "stylesheet";
+    css.href = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css";
+    document.head.appendChild(css);
+    cargarLeaflet.promesa = new Promise((listo, fallo) => {
+      const s = document.createElement("script");
+      s.src = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js";
+      s.onload = listo;
+      s.onerror = fallo;
+      document.head.appendChild(s);
+    });
+  }
+  return cargarLeaflet.promesa;
+}
+
+// verde = barata, ámbar = media, rojiza = cara (dentro del resultado actual)
+function colorPrecio(p, min, max) {
+  const t = max > min ? (p - min) / (max - min) : 0;
+  const mezcla = (a, b, f) => a.map((v, i) => Math.round(v + (b[i] - v) * f));
+  const verde = [111, 224, 140], ambar = [245, 185, 66], roja = [224, 111, 111];
+  const rgb = t < 0.5 ? mezcla(verde, ambar, t * 2) : mezcla(ambar, roja, (t - 0.5) * 2);
+  return `rgb(${rgb.join(",")})`;
+}
+
+function actualizarMapa(ranking, col) {
+  const div = document.getElementById("mapa-estaciones");
+  if (!ranking.length) { div.hidden = true; mapaClave = ""; return; }
+  const clave = JSON.stringify([fuente, selectorBuscador.value]);
+  if (clave === mapaClave) return; // el filtro de texto no redibuja el mapa
+  cargarLeaflet().then(() => {
+    mapaClave = clave;
+    div.hidden = false;
+    if (!mapa) {
+      mapa = L.map(div, { scrollWheelZoom: false });
+      // la rueda amplía solo con el cursor encima; fuera, sigue haciendo scroll la página
+      div.addEventListener("mouseenter", () => mapa.scrollWheelZoom.enable());
+      div.addEventListener("mouseleave", () => mapa.scrollWheelZoom.disable());
+      L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+        attribution: "&copy; OpenStreetMap &copy; CARTO",
+        maxZoom: 19,
+      }).addTo(mapa);
+      capaMarcas = L.layerGroup().addTo(mapa);
+    }
+    mapa.invalidateSize();
+    capaMarcas.clearLayers();
+
+    const precios = ranking.map(x => x.e[col]);
+    const min = Math.min(...precios), max = Math.max(...precios);
+    const puntos = [];
+    for (const { e, pos, muni } of ranking) {
+      const [rotulo, direccion, lat, lon] = e;
+      const c = colorPrecio(e[col], min, max);
+      const estado = etiquetaHorario(e);
+      L.circleMarker([lat, lon], {
+        radius: pos === 1 ? 9 : 6,
+        color: c,
+        weight: pos === 1 ? 3 : 1.5,
+        fillColor: c,
+        fillOpacity: 0.55,
+      }).bindTooltip(
+        `${rotulo} · ${e[col].toFixed(3)}<br><span class="pista-clic">clic para detalles</span>`,
+        { direction: "top", opacity: 1 }
+      ).bindPopup(
+        `<span class="pos-popup">nº ${pos}</span> <b>${rotulo}</b> <span class="precio-popup" style="color:${c}">${e[col].toFixed(3)} €/L</span><br>` +
+        `${direccion}${muni ? " · " + muni : ""}${estado ? " · " + estado : ""}<br>` +
+        `<a href="https://www.google.com/maps/search/?api=1&query=${lat}%2C${lon}" target="_blank" rel="noopener">cómo llegar ↗</a>`
+      ).addTo(capaMarcas);
+      puntos.push([lat, lon]);
+    }
+    if (fuente.tipo === "cerca") {
+      L.circleMarker([fuente.lat, fuente.lon], {
+        radius: 6, color: "#dfe6f0", fillColor: "#dfe6f0", fillOpacity: 0.9, weight: 2,
+      }).bindTooltip("estás aquí").addTo(capaMarcas);
+      puntos.push([fuente.lat, fuente.lon]);
+    }
+    mapa.fitBounds(puntos, { padding: [30, 30], maxZoom: 14 });
+  }).catch(() => { div.hidden = true; });
+}
+
 function sugerir(texto) {
   const q = normalizar(texto.trim());
   cerrarSugerencias();
@@ -549,8 +738,10 @@ function pintarResultado() {
 
   if (!ranking.length) {
     resultado.innerHTML = `<div class="vacio">Ninguna estación de ${lugar} tiene hoy precio de ${NOMBRES[producto]}.</div>`;
+    actualizarMapa([], col);
     return;
   }
+  actualizarMapa(ranking, col);
 
   const q = normalizar(filtroEstacion.value.trim());
   let visibles = q
@@ -564,10 +755,14 @@ function pintarResultado() {
 
   const color = COLORES[producto];
   const minimo = ranking.reduce((m, x) => Math.min(m, x.e[col]), Infinity);
-  const filas = visibles.map(({ e: [rotulo, direccion, lat, lon, ...precios], pos, muni, d, ahorro }) => {
+  const filas = visibles.map(({ e, pos, muni, d, ahorro }) => {
+    const [rotulo, direccion, lat, lon, ...precios] = e;
     const precio = precios[col - 4];
     const dif = precio - minimo;
-    const extra = muni ? `<span class="direccion-extra"> · ${muni}</span>` : "";
+    const estado = etiquetaHorario(e);
+    const extra = (muni || estado)
+      ? `<span class="direccion-extra">${muni ? " · " + muni : ""}${estado ? " · " + estado : ""}</span>`
+      : "";
     const celdaDist = muni ? `<td class="dist">${d.toFixed(1).replace(".", ",")} km</td>` : "";
     // en modo cercanía: columna de ahorro por depósito (el signo habla, la cabecera explica);
     // en modo municipio: diferencia de precio junto al importe, como siempre
