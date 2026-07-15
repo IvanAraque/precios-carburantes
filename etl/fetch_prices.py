@@ -134,13 +134,14 @@ def exportar_municipios(df, fecha, ruta):
                 round(fila.lat, 5),
                 round(fila.lon, 5),
                 *[None if pd.isna(v) else round(v, 3) for v in [getattr(fila, p) for p in precios]],
+                None if pd.isna(fila.horario) else str(fila.horario).strip(),
             ]
             for fila in grupo.itertuples()
         ]
 
     salida = {
         "actualizado": fecha,
-        "columnas": ["rotulo", "direccion", "lat", "lon", *precios],
+        "columnas": ["rotulo", "direccion", "lat", "lon", *precios, "horario"],
         "municipios": municipios,
     }
     with open(ruta, "w", encoding="utf-8") as f:
