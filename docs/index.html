@@ -19,12 +19,15 @@
     --led-98: #dfe6f0;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; } /* evita que safari ios infle los textos por su cuenta */
   body {
     background: var(--asfalto);
     color: var(--texto);
     font-family: "Archivo", system-ui, sans-serif;
     min-height: 100vh;
+    overflow-x: clip; /* red de seguridad: nada empuja la página en horizontal */
   }
+  canvas, img, svg { max-width: 100%; }
   .contenedor { max-width: 1000px; margin: 0 auto; padding: 32px 20px 64px; }
 
   header { margin-bottom: 28px; }
@@ -45,7 +48,7 @@
     border-radius: 10px;
     padding: 22px 24px;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr));
     gap: 18px;
     margin-bottom: 36px;
   }
@@ -155,6 +158,19 @@
   .tabla-estaciones .diferencia { color: var(--texto-suave); font-weight: 400; font-size: 11px; margin-left: 6px; }
   .tabla-estaciones .ahorro { font-family: "Chivo Mono", monospace; font-size: 12px; color: var(--texto-suave); white-space: nowrap; }
   .tabla-estaciones .dist { font-family: "Chivo Mono", monospace; font-size: 12px; color: var(--texto); white-space: nowrap; text-align: right; padding-right: 26px; }
+  /* móvil: en modo cercanía la dirección sobra (está en el popup del mapa)
+     y las celdas se compactan para que todo quepa sin deslizar */
+  .solo-estrecha { display: none; }
+  @media (max-width: 700px) {
+    .tabla-cerca .direccion, .tabla-cerca th.c-dir { display: none; }
+    .tabla-cerca .solo-ancha { display: none; }
+    .tabla-cerca .solo-estrecha { display: inline; }
+    .tabla-estaciones th { padding: 7px 5px; letter-spacing: 1px; }
+    .tabla-estaciones td { padding: 8px 5px; font-size: 13px; }
+    .tabla-estaciones .dist { padding-right: 10px; }
+    .tabla-estaciones td:last-child { padding-left: 6px; }
+  }
+
   /* anchos estables: que cambiar de producto no recoloque las columnas */
   @media (min-width: 700px) {
     .tabla-estaciones { table-layout: fixed; }
@@ -232,6 +248,10 @@
   .chip:hover { border-color: var(--led-95); }
   .chip-activa { color: var(--led-95); border-color: var(--led-95); }
   .separador-chips { margin: 0 6px; color: var(--borde); }
+  @media (max-width: 700px) {
+    .separador-chips { display: none; }
+    .orden-chips .grupo-chips { display: block; margin-top: 10px; }
+  }
   .tabla-estaciones td:last-child { padding-left: 22px; }
   .tabla-estaciones a { white-space: nowrap; }
   .tabla-estaciones tr.mas-barata .precio-celda { text-shadow: 0 0 14px currentColor; }
@@ -772,11 +792,11 @@ function pintarResultado() {
     const extra = (muni || estado)
       ? `<span class="direccion-extra">${muni ? " · " + muni : ""}${estado ? " · " + estado : ""}</span>`
       : "";
-    const celdaDist = muni ? `<td class="dist">${d.toFixed(1).replace(".", ",")} km</td>` : "";
+    const celdaDist = muni ? `<td class="dist">${d.toFixed(1).replace(".", ",")}<span class="solo-ancha"> km</span></td>` : "";
     // en modo cercanía: columna de ahorro por depósito (el signo habla, la cabecera explica);
     // en modo municipio: diferencia de precio junto al importe, como siempre
     const celdaAhorro = ahorro !== undefined
-      ? `<td class="ahorro">${Math.abs(ahorro) < 0.05 ? "—" : (ahorro > 0 ? "+" : "−") + Math.abs(ahorro).toFixed(2).replace(".", ",")} <span class="direccion-extra">· ${Math.round(litros * precios[col - 4])} €</span></td>`
+      ? `<td class="ahorro">${Math.abs(ahorro) < 0.05 ? "—" : (ahorro > 0 ? "+" : "−") + Math.abs(ahorro).toFixed(2).replace(".", ",")}<span class="solo-ancha"> <span class="direccion-extra">· ${Math.round(litros * precios[col - 4])} €</span></span></td>`
       : "";
     const detalle = ahorro === undefined && dif > 0 ? `<span class="diferencia">+${dif.toFixed(3)}</span>` : "";
     return `
@@ -785,9 +805,9 @@ function pintarResultado() {
       <td>${rotulo}</td>
       <td class="direccion">${direccion}${extra}</td>
       ${celdaDist}
-      <td class="precio-celda" style="color:${color}">${precio.toFixed(3)} €/L${detalle}</td>
+      <td class="precio-celda" style="color:${color}">${precio.toFixed(3)}<span class="solo-ancha"> €/L</span>${detalle}</td>
       ${celdaAhorro}
-      <td><a href="https://www.google.com/maps/search/?api=1&query=${lat}%2C${lon}" target="_blank" rel="noopener">mapa ↗</a></td>
+      <td><a href="https://www.google.com/maps/search/?api=1&query=${lat}%2C${lon}" target="_blank" rel="noopener"><span class="solo-ancha">mapa </span>↗</a></td>
     </tr>`;
   }).join("");
 
@@ -806,12 +826,11 @@ function pintarResultado() {
   const cabecera = fuente.tipo === "cerca"
     ? `<div class="cabecera-resultado">
         <span class="titulo-resultado">mejores opciones a ≤${radio} km de ti</span>
-        <span class="orden-chips">reposto
+        <span class="orden-chips"><span class="grupo-chips">reposto
           ${[20, 40, 60].map(l =>
-            `<button class="chip${litros === l ? " chip-activa" : ""}" data-litros="${l}">${l} l</button>`).join("")}
-          <span class="separador-chips">·</span> ordenar por
+            `<button class="chip${litros === l ? " chip-activa" : ""}" data-litros="${l}">${l} l</button>`).join("")}</span><span class="separador-chips">·</span><span class="grupo-chips">ordenar por
           ${["efectivo", "precio", "distancia"].map(o =>
-            `<button class="chip${ordenCerca === o ? " chip-activa" : ""}" data-orden="${o}">${o === "efectivo" ? "óptimo" : o}</button>`).join("")}
+            `<button class="chip${ordenCerca === o ? " chip-activa" : ""}" data-orden="${o}">${o === "efectivo" ? "óptimo" : o}</button>`).join("")}</span>
         </span>
       </div>`
     : "";
@@ -819,8 +838,8 @@ function pintarResultado() {
   resultado.innerHTML = `
     ${cabecera}
     <div class="panel-tabla">
-      <table class="tabla-estaciones">
-        <thead><tr><th class="c-num"></th><th class="c-rotulo">rótulo</th><th>dirección</th>${fuente.tipo === "cerca" ? '<th class="c-km">km</th>' : ""}<th class="c-precio">${NOMBRES[producto]}</th>${fuente.tipo === "cerca" ? '<th class="c-ahorro">ahorro · llenar</th>' : ""}<th class="c-mapa"></th></tr></thead>
+      <table class="tabla-estaciones${fuente.tipo === "cerca" ? " tabla-cerca" : ""}">
+        <thead><tr><th class="c-num"></th><th class="c-rotulo">rótulo</th><th class="c-dir">dirección</th>${fuente.tipo === "cerca" ? '<th class="c-km">km</th>' : ""}<th class="c-precio"><span class="solo-ancha">${NOMBRES[producto]}</span><span class="solo-estrecha">€/L</span></th>${fuente.tipo === "cerca" ? '<th class="c-ahorro">ahorro<span class="solo-ancha"> · llenar</span></th>' : ""}<th class="c-mapa"></th></tr></thead>
         <tbody>${filas}</tbody>
       </table>
     </div>
