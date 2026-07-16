@@ -14,6 +14,7 @@ GitHub Actions ejecuta el ETL cada mañana y la propia web se actualiza automát
 - Panel con los precios medios del día: gasolina 95 y 98, gasóleo A y premium, GLP.
 - Buscador por municipio (con autocompletado), filtro por rótulo o calle y ranking completo de estaciones.
 - «Cerca de mí»: con tu ubicación, ordena las estaciones por **precio efectivo** (el precio del litro más el combustible del desvío de ida y vuelta) y muestra el ahorro en euros por repostaje frente a tu estación más cercana. Ir a 8 km a ahorrar una milésima no compensa, y la tabla lo refleja.
+- Tarjeta de **mejor opción**: la recomendación con la cuenta completa — coste del surtidor, coste del desvío, ahorro neto y a partir de cuántos litros compensa desplazarse — comparada con tu estación abierta más cercana. El desplegable «¿cómo se calcula?» enseña las fórmulas con los números del caso y permite ajustar el consumo del vehículo (se recuerda).
 - Mapa con las estaciones coloreadas por precio (verde barata, rojiza cara) y estado de apertura: abierta, hasta qué hora, o cerrada ahora.
 - Evolución del precio medio nacional (histórico desde julio de 2026) y comparativa de provincias
 - Los enlaces llevan el municipio (`#teruel-teruel`), y la web recuerda tu municipio, producto y litros entre visitas.
@@ -53,7 +54,8 @@ etl/fetch_prices.py ──► descarga API ──► limpieza (pandas)
 - **Descarga con dos clientes.** La API rechaza a ratos las conexiones desde los runners de GitHub (corta el handshake TLS), así que la descarga reintenta alternando `requests` y `curl`, que presentan huellas TLS distintas.
 - **Doble cron idempotente.** GitHub descarta a veces los workflows programados en horas de carga; por eso hay una segunda cita a mediodía. Si corren ambas, la segunda simplemente reemplaza los datos del día — el histórico anexa por fecha y no duplica.
 - **Horarios: mejor callar que mentir.** El estado abierta/cerrada se calcula interpretando el campo oficial de horario (`L-D: 24H`, `L-V: 06:00-22:00; S-D: ...`, rangos que cruzan la medianoche). Los horarios ambiguos —un solo día declarado, formatos raros— no muestran estado.
-- **Precio efectivo.** El orden de «cerca de mí» reparte el coste del desvío (6,5 l/100 km, ida y vuelta) entre los litros del repostaje. Los supuestos están a la vista en la propia web.
+- **Precio efectivo.** El orden de «cerca de mí» reparte el coste del desvío (6,5 l/100 km por defecto, ida y vuelta, con distancias en línea recta estimadas) entre los litros del repostaje. Los supuestos están a la vista en la propia web y el consumo es ajustable.
+- **Referencia del ahorro.** El ahorro se compara con la estación abierta más cercana que tenga precio del producto — la que usarías por defecto. Si a esa hora está todo cerrado, se usa la más cercana sin más.
 
 ## Puesta en marcha
 
