@@ -19,7 +19,7 @@
     --led-98: #dfe6f0;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  html { -webkit-text-size-adjust: 100%; } /* evita que safari ios infle los textos por su cuenta */
+  html { -webkit-text-size-adjust: 100%; scrollbar-gutter: stable; } /* safari no infla textos; la barra de scroll no recoloca la página */
   body {
     background: var(--asfalto);
     color: var(--texto);
@@ -163,8 +163,10 @@
   .solo-estrecha { display: none; }
   @media (max-width: 700px) {
     .tabla-cerca .direccion, .tabla-cerca th.c-dir { display: none; }
-    .tabla-cerca .solo-ancha { display: none; }
-    .tabla-cerca .solo-estrecha { display: inline; }
+    .tabla-estaciones .solo-ancha { display: none; }
+    .tabla-estaciones .solo-estrecha { display: inline; }
+    .tabla-estaciones .diferencia { display: none; }
+    .tabla-estaciones .direccion { overflow-wrap: anywhere; }
     .tabla-estaciones th { padding: 7px 5px; letter-spacing: 1px; }
     .tabla-estaciones td { padding: 8px 5px; font-size: 13px; }
     .tabla-estaciones .dist { padding-right: 10px; }
@@ -173,7 +175,16 @@
 
   /* anchos estables: que cambiar de producto no recoloque las columnas */
   @media (min-width: 700px) {
-    .tabla-estaciones { table-layout: fixed; }
+    .tabla-cerca { table-layout: fixed; }
+    /* modo municipio: tabla a todo el ancho, pero el precio pegado a las
+       direcciones; el espacio sobrante lo absorbe la columna del mapa,
+       cuyo enlace se ancla al borde derecho */
+    .panel-ajustado .tabla-estaciones { table-layout: fixed; width: 100%; }
+    .panel-ajustado th.c-dir { width: 380px; }
+    .panel-ajustado th.c-precio { width: 156px; }
+    .panel-ajustado th.c-mapa { width: auto; }
+    .panel-ajustado td:last-child { text-align: right; }
+    .panel-ajustado .direccion { padding-right: 28px; }
     .tabla-estaciones th.c-num { width: 34px; }
     .tabla-estaciones th.c-rotulo { width: 150px; }
     .tabla-estaciones th.c-km { width: 82px; padding-right: 26px; }
@@ -270,6 +281,47 @@
     padding-left: 10px;
   }
   .nota-destacada b { color: var(--led-95); font-weight: 600; }
+
+  /* tarjeta "mejor opción" */
+  .tarjeta-mejor {
+    background: var(--panel);
+    border: 1px solid var(--borde);
+    border-left: 3px solid var(--led-95);
+    border-radius: 10px;
+    padding: 14px 16px 12px;
+    margin-bottom: 18px;
+  }
+  .tm-fila-1 { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .tm-conclusion { font-family: "Chivo Mono", monospace; font-size: 12px; }
+  .tm-bien { color: var(--led-95); }
+  .tm-neutra { color: var(--texto-suave); }
+  .tm-fila-2 { margin-top: 8px; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .tm-rotulo { font-size: 18px; font-weight: 700; }
+  .tm-precio { font-family: "Chivo Mono", monospace; font-weight: 600; font-size: 16px; text-shadow: 0 0 12px currentColor; }
+  .tm-mapa { font-family: "Chivo Mono", monospace; font-size: 12px; color: var(--led-95); text-decoration: none; margin-left: auto; white-space: nowrap; }
+  .tm-mapa:hover { text-decoration: underline; }
+  .tm-fila-3, .tm-fila-4 { margin-top: 7px; font-size: 14px; }
+  .tm-ahorro { font-family: "Chivo Mono", monospace; color: var(--led-95); }
+  .tm-detalles { margin-top: 10px; font-size: 12px; color: var(--texto-suave); }
+  .tm-detalles summary {
+    cursor: pointer;
+    font-family: "Chivo Mono", monospace;
+    font-size: 12px;
+    width: fit-content;
+  }
+  .tm-detalles summary:hover { color: var(--texto); }
+  .tm-detalles p { margin-top: 6px; line-height: 1.5; }
+  .tm-consumo input {
+    width: 62px;
+    background: var(--asfalto);
+    color: var(--texto);
+    border: 1px solid var(--borde);
+    border-radius: 4px;
+    padding: 3px 6px;
+    font-family: "Chivo Mono", monospace;
+    font-size: 12px;
+  }
+  .tm-consumo input:focus-visible { outline: 2px solid var(--led-95); }
 
   /* mapa de estaciones */
   .mapa {
@@ -494,6 +546,7 @@ const resultado = document.getElementById("resultado-buscador");
 let verTodas = false;
 let ordenCerca = "efectivo"; // efectivo | precio | distancia
 let litros = 40; // tamaño del repostaje para calcular ahorro y coste
+let consumo = 6.5; // l/100 km del vehículo; editable en "¿cómo se calcula?"
 
 const normalizar = s => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
 
@@ -730,7 +783,7 @@ function construirRanking(col) {
   // del desvío de ida y vuelta (6,5 l/100 km) repartido en el repostaje
   // elegido. el ahorro se calcula en € frente a la más cercana, con el
   // combustible del viaje ya descontado
-  const CONSUMO = 6.5 / 100;
+  const idxHorario = estaciones.columnas.indexOf("horario");
   for (const radio of [10, 25, 50]) {
     const lista = [];
     for (const [clave, grupo] of Object.entries(estaciones.municipios)) {
@@ -739,13 +792,22 @@ function construirRanking(col) {
         if (e[col] == null) continue;
         const d = distanciaKm(fuente.lat, fuente.lon, e[2], e[3]);
         if (d <= radio) {
-          const coste = litros * e[col] + 2 * d * CONSUMO * e[col]; // € de llenar + viaje
-          lista.push({ e, muni, d, coste, efectivo: coste / litros });
+          const viaje = 2 * d * (consumo / 100) * e[col]; // € del desvío ida y vuelta
+          const coste = litros * e[col] + viaje;
+          lista.push({ e, muni, d, viaje, coste, efectivo: coste / litros });
         }
       }
     }
     if (lista.length >= 5 || radio === 50) {
-      const masCercana = lista.reduce((m, x) => (x.d < m.d ? x : m), lista[0]);
+      // referencia: la más cercana ABIERTA con precio (estado desconocido cuenta
+      // como abierta); si a esta hora está todo cerrado, la más cercana sin más
+      const abierta = x => {
+        if (idxHorario === -1) return true;
+        const est = estadoHorario(x.e[idxHorario]);
+        return !est || est.siempre || est.abierta;
+      };
+      const porDistancia = [...lista].sort((a, b) => a.d - b.d);
+      const masCercana = porDistancia.find(abierta) || porDistancia[0];
       for (const x of lista) x.ahorro = masCercana.coste - x.coste;
       const criterios = {
         efectivo: (a, b) => a.efectivo - b.efectivo,
@@ -753,16 +815,77 @@ function construirRanking(col) {
         distancia: (a, b) => a.d - b.d,
       };
       lista.sort(criterios[ordenCerca]);
-      return { lista: lista.map((x, i) => ({ ...x, pos: i + 1 })), radio, cercana: masCercana };
+      return { lista: lista.map((x, i) => ({ ...x, pos: i + 1 })), radio, cercana: masCercana, cercanaAbierta: abierta(masCercana) };
     }
   }
+}
+
+// tarjeta "mejor opción": la respuesta antes que la tabla (solo en cerca de mí)
+function tarjetaMejorOpcion(ranking, col, cercana, cercanaAbierta) {
+  if (!ranking.length || !cercana) return "";
+  const mejor = ranking.reduce((m, x) => (x.coste < m.coste ? x : m), ranking[0]);
+  const eur = v => v.toFixed(2).replace(".", ",");
+  const esLaMisma = mejor.e === cercana.e;
+  const ahorro = cercana.coste - mejor.coste;
+
+  let conclusion, claseConclusion = "tm-bien";
+  if (esLaMisma) conclusion = "tu más cercana es también la mejor opción";
+  else if (ahorro >= 0.5) conclusion = "sí compensa desplazarse";
+  else { conclusion = "diferencia mínima: elige la que te pille mejor"; claseConclusion = "tm-neutra"; }
+
+  // litros a partir de los cuales el ahorro cubre el desvío extra
+  let compensaDesde = "";
+  if (!esLaMisma && cercana.e[col] > mejor.e[col]) {
+    const l = (mejor.viaje - cercana.viaje) / (cercana.e[col] - mejor.e[col]);
+    compensaDesde = l <= 1 ? "compensa desde el primer litro" : `compensa a partir de ${Math.ceil(l)} litros`;
+  }
+
+  const refTxt = cercanaAbierta ? "tu más cercana abierta" : "tu más cercana (ahora todo cierra)";
+  const [rotulo, , lat, lon] = mejor.e;
+  const estado = etiquetaHorario(mejor.e);
+
+  return `
+  <div class="tarjeta-mejor">
+    <div class="tm-fila-1">
+      <span class="titulo-resultado">mejor opción</span>
+      <span class="tm-conclusion ${claseConclusion}">${conclusion}</span>
+    </div>
+    <div class="tm-fila-2">
+      <span class="tm-rotulo">${rotulo}</span>
+      <span class="tm-precio" style="color:${COLORES[selectorBuscador.value]}">${mejor.e[col].toFixed(3)} €/L</span>
+      <span class="direccion-extra">a ${mejor.d.toFixed(1).replace(".", ",")} km (est.)${estado ? " · " + estado : ""}</span>
+      <a class="tm-mapa" href="https://www.google.com/maps/search/?api=1&query=${lat}%2C${lon}" target="_blank" rel="noopener">mapa ↗</a>
+    </div>
+    <div class="tm-fila-3">
+      repostar ${litros} l aquí: <b>${eur(mejor.coste)} €</b>
+      <span class="direccion-extra">(${eur(litros * mejor.e[col])} € de surtidor + ${eur(mejor.viaje)} € del viaje)</span>
+    </div>
+    ${esLaMisma ? "" : `
+    <div class="tm-fila-4">
+      ahorras <b class="tm-ahorro">${eur(ahorro)} €</b>
+      <span class="direccion-extra">frente a ${refTxt}: ${cercana.e[0]} a ${cercana.d.toFixed(1).replace(".", ",")} km (${cercana.e[col].toFixed(3)} €/L)</span>
+      ${compensaDesde ? `<span class="direccion-extra"> · ${compensaDesde}</span>` : ""}
+    </div>`}
+    <details class="tm-detalles">
+      <summary>¿cómo se calcula?</summary>
+      <p>Distancias en línea recta (estimadas), contadas ida y vuelta.</p>
+      <p>Coste del viaje = 2 × km × consumo × precio de esa estación.
+         Con ${mejor.d.toFixed(1).replace(".", ",")} km: 2 × ${mejor.d.toFixed(1).replace(".", ",")} × ${String(consumo).replace(".", ",")}/100 × ${mejor.e[col].toFixed(3)} = ${eur(mejor.viaje)} €.</p>
+      <p>Coste total = litros × precio + viaje. El ahorro compara ese total con el de ${refTxt} (${cercana.e[0]}).</p>
+      <p>«Compensa a partir de X litros»: los litros donde la diferencia de precio ya paga el desvío extra.</p>
+      <p class="tm-consumo">tu consumo:
+        <input id="consumo-input" type="number" min="3" max="20" step="0.5" value="${consumo}" /> l/100 km
+        <span class="direccion-extra">(se guarda para próximas visitas)</span>
+      </p>
+    </details>
+  </div>`;
 }
 
 function pintarResultado() {
   if (!fuente || !estaciones) return;
   const producto = selectorBuscador.value;
   const col = estaciones.columnas.indexOf(producto);
-  const { lista: ranking, total, radio, cercana } = construirRanking(col);
+  const { lista: ranking, total, radio, cercana, cercanaAbierta } = construirRanking(col);
   const lugar = fuente.tipo === "municipio" ? fuente.clave : `≤${radio} km de tu ubicación`;
 
   if (!ranking.length) {
@@ -818,8 +941,8 @@ function pintarResultado() {
   const notas = fuente.tipo === "municipio"
     ? `<p class="nota-buscador">${visibles.length} de ${ranking.length} estaciones con precio en ${lugar} (${total} en total) · precios del ${estaciones.actualizado}</p>`
     : `<div class="notas-cerca">
-        <p class="nota-destacada">ahorro comparado con repostar en tu más cercana: <b>${cercana.e[0]}</b> — a ${cercana.d.toFixed(1).replace(".", ",")} km, <b>${cercana.e[col].toFixed(3)} €/L</b></p>
-        <p class="nota-buscador">la gasolina de ir y volver ya está descontada (6,5 l/100 km) · «llenar» es solo el surtidor, sin el viaje</p>
+        ${q ? `<p class="nota-destacada">ahorro comparado con repostar en tu más cercana abierta: <b>${cercana.e[0]}</b> — a ${cercana.d.toFixed(1).replace(".", ",")} km, <b>${cercana.e[col].toFixed(3)} €/L</b></p>` : ""}
+        <p class="nota-buscador">la gasolina de ir y volver ya está descontada (${String(consumo).replace(".", ",")} l/100 km) · «llenar» es solo el surtidor, sin el viaje</p>
         <p class="nota-buscador">${visibles.length} de ${ranking.length} estaciones con precio · precios del ${estaciones.actualizado}</p>
       </div>`;
 
@@ -835,9 +958,12 @@ function pintarResultado() {
       </div>`
     : "";
 
+  const tarjeta = fuente.tipo === "cerca" && !q ? tarjetaMejorOpcion(ranking, col, cercana, cercanaAbierta) : "";
+
   resultado.innerHTML = `
+    ${tarjeta}
     ${cabecera}
-    <div class="panel-tabla">
+    <div class="panel-tabla${fuente.tipo === "cerca" ? "" : " panel-ajustado"}">
       <table class="tabla-estaciones${fuente.tipo === "cerca" ? " tabla-cerca" : ""}">
         <thead><tr><th class="c-num"></th><th class="c-rotulo">rótulo</th><th class="c-dir">dirección</th>${fuente.tipo === "cerca" ? '<th class="c-km">km</th>' : ""}<th class="c-precio"><span class="solo-ancha">${NOMBRES[producto]}</span><span class="solo-estrecha">€/L</span></th>${fuente.tipo === "cerca" ? '<th class="c-ahorro">ahorro<span class="solo-ancha"> · llenar</span></th>' : ""}<th class="c-mapa"></th></tr></thead>
         <tbody>${filas}</tbody>
@@ -858,6 +984,18 @@ function pintarResultado() {
     }
     pintarResultado();
   }));
+  const inputConsumo = document.getElementById("consumo-input");
+  if (inputConsumo) {
+    inputConsumo.addEventListener("change", () => {
+      let v = Number(inputConsumo.value.replace?.(",", ".") ?? inputConsumo.value);
+      if (!Number.isFinite(v) || v <= 0) v = 6.5;
+      consumo = Math.min(20, Math.max(3, v));
+      preferencia("consumo", consumo);
+      const abierto = resultado.querySelector(".tm-detalles")?.open;
+      pintarResultado();
+      if (abierto) { const d = resultado.querySelector(".tm-detalles"); if (d) d.open = true; }
+    });
+  }
 }
 
 function initBuscador() {
@@ -868,6 +1006,8 @@ function initBuscador() {
   if (productoGuardado && NOMBRES[productoGuardado]) selectorBuscador.value = productoGuardado;
   const litrosGuardados = Number(preferencia("litros"));
   if ([20, 40, 60].includes(litrosGuardados)) litros = litrosGuardados;
+  const consumoGuardado = Number(preferencia("consumo"));
+  if (consumoGuardado >= 3 && consumoGuardado <= 20) consumo = consumoGuardado;
   selectorBuscador.addEventListener("change", () => {
     preferencia("producto", selectorBuscador.value);
     pintarResultado();
