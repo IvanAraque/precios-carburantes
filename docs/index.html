@@ -499,6 +499,15 @@ function recordar(clave) {
   try { localStorage.setItem("municipio", clave); } catch {}
 }
 
+// preferencias pequeñas (producto y litros) que sobreviven entre visitas
+function preferencia(clave, valor) {
+  try {
+    if (valor === undefined) return localStorage.getItem(clave);
+    localStorage.setItem(clave, valor);
+  } catch {}
+  return null;
+}
+
 // --- horarios ("L-D: 24H", "L-V: 06:00-22:00; S-D: 07:00-22:00"...) ---
 const DIAS_SEMANA = ["D", "L", "M", "X", "J", "V", "S"]; // getDay(): 0 = domingo
 
@@ -824,7 +833,10 @@ function pintarResultado() {
   });
   resultado.querySelectorAll(".chip").forEach(b => b.addEventListener("click", () => {
     if (b.dataset.orden) ordenCerca = b.dataset.orden;
-    else litros = Number(b.dataset.litros);
+    else {
+      litros = Number(b.dataset.litros);
+      preferencia("litros", litros);
+    }
     pintarResultado();
   }));
 }
@@ -833,7 +845,14 @@ function initBuscador() {
   selectorBuscador.innerHTML = Object.entries(NOMBRES)
     .map(([k, v]) => `<option value="${k}">${v}</option>`)
     .join("");
-  selectorBuscador.addEventListener("change", pintarResultado);
+  const productoGuardado = preferencia("producto");
+  if (productoGuardado && NOMBRES[productoGuardado]) selectorBuscador.value = productoGuardado;
+  const litrosGuardados = Number(preferencia("litros"));
+  if ([20, 40, 60].includes(litrosGuardados)) litros = litrosGuardados;
+  selectorBuscador.addEventListener("change", () => {
+    preferencia("producto", selectorBuscador.value);
+    pintarResultado();
+  });
   filtroEstacion.addEventListener("input", pintarResultado);
 
   const botonCerca = document.getElementById("boton-cerca");
@@ -922,6 +941,9 @@ async function init() {
   selector.innerHTML = Object.entries(NOMBRES)
     .map(([k, v]) => `<option value="${k}">${v}</option>`)
     .join("");
+  // las gráficas también abren con tu producto de siempre
+  const productoGuardado = preferencia("producto");
+  if (productoGuardado && NOMBRES[productoGuardado]) selector.value = productoGuardado;
   selector.addEventListener("change", () => {
     pintarEvolucion(selector.value);
     pintarProvincias(selector.value);
