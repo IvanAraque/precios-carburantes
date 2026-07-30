@@ -52,8 +52,8 @@ etl/fetch_prices.py ──► descarga API ──► limpieza (pandas)
 ## Decisiones de implementación
 
 - **Descarga con dos clientes.** La API rechaza a ratos las conexiones desde los runners de GitHub (corta el handshake TLS), así que la descarga reintenta alternando `requests` y `curl`, que presentan huellas TLS distintas.
-- **Doble cron idempotente.** GitHub descarta a veces los workflows programados en horas de carga; por eso hay una segunda cita a mediodía. Si corren ambas, la segunda simplemente reemplaza los datos del día — el histórico anexa por fecha y no duplica.
-- **Horarios: mejor callar que mentir.** El estado abierta/cerrada se calcula interpretando el campo oficial de horario (`L-D: 24H`, `L-V: 06:00-22:00; S-D: ...`, rangos que cruzan la medianoche). Los horarios ambiguos —un solo día declarado, formatos raros— no muestran estado.
+- **Doble cron.** GitHub descarta a veces los workflows programados en horas de carga; por eso hay una segunda cita a mediodía. Si corren ambas, la segunda simplemente reemplaza los datos del día — el histórico anexa por fecha y no duplica.
+- **Horarios.** El estado abierta/cerrada se calcula interpretando el campo oficial de horario (`L-D: 24H`, `L-V: 06:00-22:00; S-D: ...`, rangos que cruzan la medianoche). Los horarios ambiguos —un solo día declarado, formatos raros— no muestran estado.
 - **Precio efectivo.** El orden de «cerca de mí» reparte el coste del desvío (6,5 l/100 km por defecto, ida y vuelta, con distancias en línea recta estimadas) entre los litros del repostaje. Los supuestos están a la vista en la propia web y el consumo es ajustable.
 - **Referencia del ahorro.** El ahorro se compara con la estación abierta más cercana que tenga precio del producto — la que usarías por defecto. Si a esa hora está todo cerrado, se usa la más cercana sin más.
 
@@ -64,7 +64,7 @@ pip install -r requirements.txt
 python etl/fetch_prices.py
 ```
 
-En GitHub:
+En GitHub(si quieres desplegar tu propia copia):
 
 1. Settings → Pages → Source: `main`, carpeta `/docs`
 2. Settings → Actions → General → Workflow permissions: "Read and write permissions"
