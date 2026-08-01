@@ -334,15 +334,28 @@
     z-index: 0;
   }
   @media (max-width: 700px) { .mapa { height: 300px; } }
-  .mapa .leaflet-popup-content-wrapper, .mapa .leaflet-popup-tip {
+  .mapa .maplibregl-popup-content {
     background: var(--panel);
     color: var(--texto);
+    border: 1px solid var(--borde);
+    border-radius: 8px;
+    padding: 10px 14px;
     box-shadow: 0 10px 24px rgba(0,0,0,.5);
+    font-family: "Archivo", system-ui, sans-serif;
+    font-size: 13px;
+    line-height: 1.5;
   }
-  .mapa .leaflet-popup-content { font-family: "Archivo", system-ui, sans-serif; font-size: 13px; line-height: 1.5; }
-  .mapa .leaflet-popup-content a { color: var(--led-95); }
-  .mapa .leaflet-popup-content .precio-popup { font-family: "Chivo Mono", monospace; font-weight: 600; }
-  .mapa .leaflet-popup-content .pos-popup {
+  .mapa .maplibregl-popup-anchor-bottom .maplibregl-popup-tip,
+  .mapa .maplibregl-popup-anchor-bottom-left .maplibregl-popup-tip,
+  .mapa .maplibregl-popup-anchor-bottom-right .maplibregl-popup-tip { border-top-color: var(--borde); }
+  .mapa .maplibregl-popup-anchor-top .maplibregl-popup-tip,
+  .mapa .maplibregl-popup-anchor-top-left .maplibregl-popup-tip,
+  .mapa .maplibregl-popup-anchor-top-right .maplibregl-popup-tip { border-bottom-color: var(--borde); }
+  .mapa .maplibregl-popup-anchor-left .maplibregl-popup-tip { border-right-color: var(--borde); }
+  .mapa .maplibregl-popup-anchor-right .maplibregl-popup-tip { border-left-color: var(--borde); }
+  .mapa .maplibregl-popup-content a { color: var(--led-95); }
+  .mapa .maplibregl-popup-content .precio-popup { font-family: "Chivo Mono", monospace; font-weight: 600; }
+  .mapa .maplibregl-popup-content .pos-popup {
     font-family: "Chivo Mono", monospace;
     font-size: 10px;
     color: var(--texto-suave);
@@ -351,27 +364,55 @@
     padding: 1px 6px;
     vertical-align: 1px;
   }
-  .mapa a.leaflet-popup-close-button { color: var(--texto-suave); }
-  .mapa .leaflet-tooltip {
-    background: var(--panel);
-    color: var(--texto);
-    border: 1px solid var(--borde);
+  .mapa .maplibregl-popup-close-button { color: var(--texto-suave); font-size: 16px; padding: 0 6px; }
+  .mapa .tooltip-mapa .maplibregl-popup-content {
     font-family: "Chivo Mono", monospace;
     font-size: 12px;
+    padding: 5px 9px;
     box-shadow: 0 6px 16px rgba(0,0,0,.45);
   }
-  .mapa .leaflet-tooltip-top:before { border-top-color: var(--borde); }
-  .mapa .leaflet-tooltip .pista-clic { color: var(--texto-suave); font-size: 10px; }
+  .mapa .tooltip-mapa .pista-clic { color: var(--texto-suave); font-size: 10px; }
   .h-abierta { color: var(--led-95); }
   .h-cerrada { color: #e0776f; }
-  .mapa .leaflet-bar a {
-    background: var(--panel);
-    color: var(--texto);
-    border-bottom: 1px solid var(--borde);
+  .leyenda-mapa {
+    position: absolute;
+    left: 10px;
+    bottom: 10px;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 9px;
+    background: rgba(21,24,30,.6);
+    border: 1px solid var(--borde);
+    border-radius: 999px;
+    font-family: "Chivo Mono", monospace;
+    font-size: 10px;
+    color: var(--texto-suave);
+    pointer-events: none;
+    opacity: .5; /* siempre presente pero discreta; gana cuerpo con el cursor encima */
+    transition: opacity .25s;
   }
-  .mapa .leaflet-bar a:hover { background: var(--borde); }
-  .mapa .leaflet-control-attribution { background: rgba(21,24,30,.75) !important; color: var(--texto-suave) !important; font-size: 10px; }
-  .mapa .leaflet-control-attribution a { color: var(--texto-suave) !important; }
+  .mapa:hover .leyenda-mapa { opacity: .9; }
+  .leyenda-mapa .degradado {
+    width: 56px;
+    height: 6px;
+    border-radius: 3px;
+    background: linear-gradient(90deg, rgb(111,224,140), rgb(245,185,66), rgb(224,111,111));
+  }
+  .mapa .maplibregl-ctrl-group {
+    background: var(--panel);
+    box-shadow: 0 2px 8px rgba(0,0,0,.4);
+    opacity: .5; /* mismos modales que la leyenda: discretos hasta que entras */
+    transition: opacity .25s;
+  }
+  .mapa:hover .maplibregl-ctrl-group { opacity: .9; }
+  .mapa .maplibregl-ctrl-group button + button { border-top: 1px solid var(--borde); }
+  .mapa .maplibregl-ctrl-group button:hover { background: var(--borde); }
+  .mapa .maplibregl-ctrl button .maplibregl-ctrl-icon { filter: invert(.85); }
+  .mapa .maplibregl-ctrl-attrib { background: rgba(21,24,30,.75) !important; color: var(--texto-suave) !important; font-size: 10px; }
+  .mapa .maplibregl-ctrl-attrib a { color: var(--texto-suave) !important; }
+  .mapa .maplibregl-ctrl-attrib-button { filter: invert(.85); }
 
   footer { font-size: 12px; color: var(--texto-suave); }
   footer a { color: var(--led-95); }
@@ -635,24 +676,152 @@ function etiquetaHorario(e) {
 }
 
 // --- mapa ---
-let mapa = null, capaMarcas = null, mapaClave = "";
+let mapa = null, mapaListo = null, mapaClave = "";
+const ESTILO_MAPA = "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json";
 
-function cargarLeaflet() {
-  if (window.L) return Promise.resolve();
-  if (!cargarLeaflet.promesa) {
+// etiquetas de precio con fundido: cada una guarda su intensidad (0..1)
+// y se anima hacia 1 si está bajo la linterna del cursor, hacia 0 si no
+const luces = new Map();
+let lucesObjetivo = new Set(), lucesAnimando = false;
+
+function iluminarPrecios(ids) {
+  lucesObjetivo = ids;
+  for (const id of ids) if (!luces.has(id)) luces.set(id, 0);
+  if (!lucesAnimando && luces.size) {
+    lucesAnimando = true;
+    requestAnimationFrame(pasoLuces);
+  }
+}
+
+function pasoLuces() {
+  let pendiente = false;
+  for (const [id, v] of luces) {
+    const destino = lucesObjetivo.has(id) ? 1 : 0;
+    let nuevo = v + (destino - v) * 0.22; // fundido exponencial, ~150 ms
+    if (Math.abs(destino - nuevo) < 0.02) nuevo = destino;
+    mapa.setFeatureState({ source: "estaciones", id }, { luz: nuevo });
+    if (nuevo === 0) luces.delete(id);
+    else {
+      luces.set(id, nuevo);
+      if (nuevo !== destino) pendiente = true;
+    }
+  }
+  if (pendiente) requestAnimationFrame(pasoLuces);
+  else lucesAnimando = false;
+}
+
+function cargarMapLibre() {
+  if (window.maplibregl) return Promise.resolve();
+  if (!cargarMapLibre.promesa) {
     const css = document.createElement("link");
     css.rel = "stylesheet";
-    css.href = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css";
+    css.href = "https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/5.12.0/maplibre-gl.min.css";
     document.head.appendChild(css);
-    cargarLeaflet.promesa = new Promise((listo, fallo) => {
+    cargarMapLibre.promesa = new Promise((listo, fallo) => {
       const s = document.createElement("script");
-      s.src = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js";
+      s.src = "https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/5.12.0/maplibre-gl.min.js";
       s.onload = listo;
       s.onerror = fallo;
       document.head.appendChild(s);
     });
   }
-  return cargarLeaflet.promesa;
+  return cargarMapLibre.promesa;
+}
+
+function crearMapa(div) {
+  mapa = new maplibregl.Map({
+    container: div,
+    style: ESTILO_MAPA,
+    center: [-3.7, 40.2],
+    zoom: 5,
+    attributionControl: { compact: true },
+    dragRotate: false,        // norte siempre arriba, como toda la vida
+    pitchWithRotate: false,
+    touchPitch: false,
+  });
+  mapa.addControl(new maplibregl.NavigationControl({ showCompass: false }));
+  mapa.addControl(new maplibregl.FullscreenControl());
+  div.insertAdjacentHTML("beforeend",
+    '<div class="leyenda-mapa">barata<span class="degradado"></span>cara</div>');
+  // la rueda amplía solo con el cursor encima; fuera, sigue haciendo scroll la página
+  mapa.scrollZoom.disable();
+  div.addEventListener("mouseenter", () => mapa.scrollZoom.enable());
+  div.addEventListener("mouseleave", () => mapa.scrollZoom.disable());
+
+  mapaListo = new Promise((listo, fallo) => {
+    mapa.once("error", e => fallo(e));
+    mapa.once("load", () => {
+      mapa.addSource("estaciones", { type: "geojson", data: { type: "FeatureCollection", features: [] }, generateId: true });
+      mapa.addLayer({
+        id: "estaciones",
+        type: "circle",
+        source: "estaciones",
+        paint: {
+          "circle-radius": ["get", "r"],
+          "circle-color": ["get", "c"],
+          "circle-opacity": ["get", "op"],
+          "circle-stroke-color": ["get", "c"],
+          "circle-stroke-width": ["get", "w"],
+          "circle-stroke-opacity": 1,
+        },
+      });
+      // el precio se enciende solo en los puntos cercanos al cursor,
+      // para no empapelar el mapa de cifras
+      mapa.addLayer({
+        id: "precios",
+        type: "symbol",
+        source: "estaciones",
+        minzoom: 8, // que la nº 1 no pierda su etiqueta en radios amplios de «cerca de mí»
+        filter: ["has", "precio"],
+        layout: {
+          "text-field": ["get", "precio"],
+          "text-font": ["Montserrat Medium"],
+          "text-size": 11,
+          "text-anchor": "top",
+          "text-offset": [0, 0.9],
+        },
+        paint: {
+          "text-color": ["get", "c"],
+          "text-halo-color": "#0b0d11",
+          "text-halo-width": 1.5,
+          // la nº 1 lleva su precio siempre visible; el resto se enciende cerca del cursor
+          "text-opacity": ["case", ["==", ["get", "fija"], true], 0.8,
+            ["*", 0.55, ["coalesce", ["feature-state", "luz"], 0]]],
+        },
+      });
+
+      mapa.on("mousemove", ev => {
+        const r = 32; // px alrededor del cursor
+        const vistas = mapa.queryRenderedFeatures(
+          [[ev.point.x - r, ev.point.y - r], [ev.point.x + r, ev.point.y + r]],
+          { layers: ["estaciones"] }
+        );
+        iluminarPrecios(new Set(vistas.map(f => f.id)));
+      });
+      mapa.getCanvas().addEventListener("mouseleave", () => iluminarPrecios(new Set()));
+
+      const pista = new maplibregl.Popup({ closeButton: false, closeOnClick: false, className: "tooltip-mapa", offset: 12 });
+      mapa.on("mousemove", "estaciones", ev => {
+        mapa.getCanvas().style.cursor = "pointer";
+        const f = ev.features[0];
+        pista.setLngLat(f.geometry.coordinates).setHTML(f.properties.pista).addTo(mapa);
+      });
+      mapa.on("mouseleave", "estaciones", () => {
+        mapa.getCanvas().style.cursor = "";
+        pista.remove();
+      });
+      mapa.on("click", "estaciones", ev => {
+        const f = ev.features[0];
+        if (!f.properties.ficha) return; // el punto "estás aquí" no abre ficha
+        pista.remove();
+        new maplibregl.Popup({ offset: 12, maxWidth: "300px" })
+          .setLngLat(f.geometry.coordinates)
+          .setHTML(f.properties.ficha)
+          .addTo(mapa);
+      });
+      listo();
+    });
+  });
 }
 
 // verde = barata, ámbar = media, rojiza = cara (dentro del resultado actual)
@@ -669,53 +838,54 @@ function actualizarMapa(ranking, col) {
   if (!ranking.length) { div.hidden = true; mapaClave = ""; return; }
   const clave = JSON.stringify([fuente, selectorBuscador.value]);
   if (clave === mapaClave) return; // el filtro de texto no redibuja el mapa
-  cargarLeaflet().then(() => {
-    mapaClave = clave;
+  cargarMapLibre().then(() => {
     div.hidden = false;
-    if (!mapa) {
-      mapa = L.map(div, { scrollWheelZoom: false });
-      // la rueda amplía solo con el cursor encima; fuera, sigue haciendo scroll la página
-      div.addEventListener("mouseenter", () => mapa.scrollWheelZoom.enable());
-      div.addEventListener("mouseleave", () => mapa.scrollWheelZoom.disable());
-      L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
-        attribution: "&copy; OpenStreetMap &copy; CARTO",
-        maxZoom: 19,
-      }).addTo(mapa);
-      capaMarcas = L.layerGroup().addTo(mapa);
-    }
-    mapa.invalidateSize();
-    capaMarcas.clearLayers();
+    if (!mapa) crearMapa(div);
+    return mapaListo;
+  }).then(() => {
+    mapaClave = clave;
+    mapa.resize();
 
     const precios = ranking.map(x => x.e[col]);
     const min = Math.min(...precios), max = Math.max(...precios);
+    const limites = new maplibregl.LngLatBounds();
     const puntos = [];
     for (const { e, pos, muni } of ranking) {
       const [rotulo, direccion, lat, lon] = e;
       const c = colorPrecio(e[col], min, max);
       const estado = etiquetaHorario(e);
-      L.circleMarker([lat, lon], {
-        radius: pos === 1 ? 9 : 6,
-        color: c,
-        weight: pos === 1 ? 3 : 1.5,
-        fillColor: c,
-        fillOpacity: 0.55,
-      }).bindTooltip(
-        `${rotulo} · ${e[col].toFixed(3)}<br><span class="pista-clic">clic para detalles</span>`,
-        { direction: "top", opacity: 1 }
-      ).bindPopup(
-        `<span class="pos-popup">nº ${pos}</span> <b>${rotulo}</b> <span class="precio-popup" style="color:${c}">${e[col].toFixed(3)} €/L</span><br>` +
-        `${direccion}${muni ? " · " + muni : ""}${estado ? " · " + estado : ""}<br>` +
-        `<a href="https://www.google.com/maps/search/?api=1&query=${lat}%2C${lon}" target="_blank" rel="noopener">cómo llegar ↗</a>`
-      ).addTo(capaMarcas);
-      puntos.push([lat, lon]);
+      puntos.push({
+        type: "Feature",
+        geometry: { type: "Point", coordinates: [lon, lat] },
+        properties: {
+          r: pos === 1 ? 9 : 6,
+          w: pos === 1 ? 3 : 1.5,
+          op: 0.55,
+          c,
+          precio: e[col].toFixed(3),
+          fija: pos === 1,
+          pista: `${rotulo} · ${e[col].toFixed(3)}<br><span class="pista-clic">clic para detalles</span>`,
+          ficha:
+            `<span class="pos-popup">nº ${pos}</span> <b>${rotulo}</b> <span class="precio-popup" style="color:${c}">${e[col].toFixed(3)} €/L</span><br>` +
+            `${direccion}${muni ? " · " + muni : ""}${estado ? " · " + estado : ""}<br>` +
+            `<a href="https://www.google.com/maps/search/?api=1&query=${lat}%2C${lon}" target="_blank" rel="noopener">cómo llegar ↗</a>`,
+        },
+      });
+      limites.extend([lon, lat]);
     }
     if (fuente.tipo === "cerca") {
-      L.circleMarker([fuente.lat, fuente.lon], {
-        radius: 6, color: "#dfe6f0", fillColor: "#dfe6f0", fillOpacity: 0.9, weight: 2,
-      }).bindTooltip("estás aquí").addTo(capaMarcas);
-      puntos.push([fuente.lat, fuente.lon]);
+      puntos.push({
+        type: "Feature",
+        geometry: { type: "Point", coordinates: [fuente.lon, fuente.lat] },
+        properties: { r: 6, w: 2, op: 0.9, c: "#dfe6f0", pista: "estás aquí", ficha: "" },
+      });
+      limites.extend([fuente.lon, fuente.lat]);
     }
-    mapa.fitBounds(puntos, { padding: [30, 30], maxZoom: 14 });
+    mapa.removeFeatureState({ source: "estaciones" }); // los ids se regeneran con cada búsqueda
+    luces.clear();
+    lucesObjetivo = new Set();
+    mapa.getSource("estaciones").setData({ type: "FeatureCollection", features: puntos });
+    mapa.fitBounds(limites, { padding: 30, maxZoom: 14 });
   }).catch(() => { div.hidden = true; });
 }
 
