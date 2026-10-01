@@ -21073,3 +21073,260 @@ fecha,provincia,producto,media,n
 2026-09-30,Ávila,gasolina_95_e5,1.9775,69
 2026-09-30,Ávila,gasolina_98_e5,2.1088,32
 2026-09-30,Ávila,glp,1.159,3
+2026-10-01,Albacete,gasoleo_a,1.9342,153
+2026-10-01,Albacete,gasoleo_premium,2.0499,69
+2026-10-01,Albacete,gasolina_95_e5,1.8481,144
+2026-10-01,Albacete,gasolina_98_e5,1.9989,66
+2026-10-01,Albacete,glp,1.1224,7
+2026-10-01,Alicante,gasoleo_a,1.9163,478
+2026-10-01,Alicante,gasoleo_premium,2.0221,275
+2026-10-01,Alicante,gasolina_95_e5,1.8442,474
+2026-10-01,Alicante,gasolina_98_e5,2.0086,258
+2026-10-01,Alicante,glp,1.0921,46
+2026-10-01,Almería,gasoleo_a,1.8997,231
+2026-10-01,Almería,gasoleo_premium,2.0011,119
+2026-10-01,Almería,gasolina_95_e5,1.8337,219
+2026-10-01,Almería,gasolina_98_e5,1.9967,94
+2026-10-01,Almería,glp,1.1228,21
+2026-10-01,Araba/Álava,gasoleo_a,1.9352,72
+2026-10-01,Araba/Álava,gasoleo_premium,2.0198,36
+2026-10-01,Araba/Álava,gasolina_95_e5,1.8528,67
+2026-10-01,Araba/Álava,gasolina_98_e5,1.993,37
+2026-10-01,Araba/Álava,glp,1.1288,9
+2026-10-01,Asturias,gasoleo_a,1.9757,240
+2026-10-01,Asturias,gasoleo_premium,2.0497,158
+2026-10-01,Asturias,gasolina_95_e5,1.8699,225
+2026-10-01,Asturias,gasolina_98_e5,1.9999,141
+2026-10-01,Asturias,glp,1.1604,23
+2026-10-01,Badajoz,gasoleo_a,1.925,280
+2026-10-01,Badajoz,gasoleo_premium,2.0238,133
+2026-10-01,Badajoz,gasolina_95_e5,1.8522,247
+2026-10-01,Badajoz,gasolina_98_e5,2.0159,69
+2026-10-01,Badajoz,glp,1.1502,6
+2026-10-01,Balears (Illes),gasoleo_a,2.0248,216
+2026-10-01,Balears (Illes),gasoleo_premium,2.1026,102
+2026-10-01,Balears (Illes),gasolina_95_e5,1.9337,215
+2026-10-01,Balears (Illes),gasolina_98_e5,2.0672,126
+2026-10-01,Balears (Illes),glp,1.1457,21
+2026-10-01,Barcelona,gasoleo_a,1.9039,772
+2026-10-01,Barcelona,gasoleo_premium,1.983,387
+2026-10-01,Barcelona,gasolina_95_e5,1.8065,762
+2026-10-01,Barcelona,gasolina_98_e5,1.9564,433
+2026-10-01,Barcelona,glp,1.0712,86
+2026-10-01,Bizkaia,gasoleo_a,1.9292,127
+2026-10-01,Bizkaia,gasoleo_premium,1.9695,45
+2026-10-01,Bizkaia,gasolina_95_e5,1.8469,127
+2026-10-01,Bizkaia,gasolina_98_e5,1.9911,68
+2026-10-01,Bizkaia,glp,1.1745,11
+2026-10-01,Burgos,gasoleo_a,1.9302,138
+2026-10-01,Burgos,gasoleo_premium,1.9989,77
+2026-10-01,Burgos,gasolina_95_e5,1.8656,134
+2026-10-01,Burgos,gasolina_98_e5,2.0266,57
+2026-10-01,Burgos,glp,1.1578,13
+2026-10-01,Cantabria,gasoleo_a,1.9444,168
+2026-10-01,Cantabria,gasoleo_premium,2.0014,82
+2026-10-01,Cantabria,gasolina_95_e5,1.8532,167
+2026-10-01,Cantabria,gasolina_98_e5,2.0119,86
+2026-10-01,Cantabria,glp,1.1638,29
+2026-10-01,Castellón / Castelló,gasoleo_a,1.9245,191
+2026-10-01,Castellón / Castelló,gasoleo_premium,2.0457,96
+2026-10-01,Castellón / Castelló,gasolina_95_e5,1.838,189
+2026-10-01,Castellón / Castelló,gasolina_98_e5,1.9787,75
+2026-10-01,Castellón / Castelló,glp,1.1699,10
+2026-10-01,Ceuta,gasoleo_a,1.7365,10
+2026-10-01,Ceuta,gasoleo_premium,1.774,4
+2026-10-01,Ceuta,gasolina_95_e5,1.6935,10
+2026-10-01,Ceuta,gasolina_98_e5,1.7196,8
+2026-10-01,Ciudad Real,gasoleo_a,1.9192,210
+2026-10-01,Ciudad Real,gasoleo_premium,2.0185,60
+2026-10-01,Ciudad Real,gasolina_95_e5,1.835,189
+2026-10-01,Ciudad Real,gasolina_98_e5,1.9681,71
+2026-10-01,Ciudad Real,glp,1.0701,15
+2026-10-01,Coruña (A),gasoleo_a,1.9297,286
+2026-10-01,Coruña (A),gasoleo_premium,2.0035,166
+2026-10-01,Coruña (A),gasolina_95_e5,1.8627,283
+2026-10-01,Coruña (A),gasolina_98_e5,2.0149,170
+2026-10-01,Coruña (A),glp,1.0594,33
+2026-10-01,Cuenca,gasoleo_a,1.9439,116
+2026-10-01,Cuenca,gasoleo_premium,2.0689,56
+2026-10-01,Cuenca,gasolina_95_e5,1.9053,107
+2026-10-01,Cuenca,gasolina_98_e5,2.0364,40
+2026-10-01,Cuenca,glp,1.1683,6
+2026-10-01,Cáceres,gasoleo_a,1.9659,157
+2026-10-01,Cáceres,gasoleo_premium,2.0671,79
+2026-10-01,Cáceres,gasolina_95_e5,1.8675,145
+2026-10-01,Cáceres,gasolina_98_e5,2.034,46
+2026-10-01,Cáceres,glp,1.154,7
+2026-10-01,Cádiz,gasoleo_a,1.9318,289
+2026-10-01,Cádiz,gasoleo_premium,2.0157,176
+2026-10-01,Cádiz,gasolina_95_e5,1.8483,285
+2026-10-01,Cádiz,gasolina_98_e5,2.0045,116
+2026-10-01,Cádiz,glp,1.0893,26
+2026-10-01,Córdoba,gasoleo_a,1.9469,208
+2026-10-01,Córdoba,gasoleo_premium,2.0257,102
+2026-10-01,Córdoba,gasolina_95_e5,1.8187,203
+2026-10-01,Córdoba,gasolina_98_e5,1.9586,66
+2026-10-01,Córdoba,glp,1.1132,13
+2026-10-01,Gipuzkoa,gasoleo_a,1.9601,144
+2026-10-01,Gipuzkoa,gasoleo_premium,2.0482,80
+2026-10-01,Gipuzkoa,gasolina_95_e5,1.8518,131
+2026-10-01,Gipuzkoa,gasolina_98_e5,2.0044,77
+2026-10-01,Gipuzkoa,glp,1.0927,19
+2026-10-01,Girona,gasoleo_a,1.9074,269
+2026-10-01,Girona,gasoleo_premium,2.0176,149
+2026-10-01,Girona,gasolina_95_e5,1.8447,259
+2026-10-01,Girona,gasolina_98_e5,1.9883,155
+2026-10-01,Girona,glp,1.1545,26
+2026-10-01,Granada,gasoleo_a,1.9274,285
+2026-10-01,Granada,gasoleo_premium,2.0276,171
+2026-10-01,Granada,gasolina_95_e5,1.8569,281
+2026-10-01,Granada,gasolina_98_e5,2.0027,151
+2026-10-01,Granada,glp,1.0421,22
+2026-10-01,Guadalajara,gasoleo_a,1.9525,89
+2026-10-01,Guadalajara,gasoleo_premium,2.0241,44
+2026-10-01,Guadalajara,gasolina_95_e5,1.8401,87
+2026-10-01,Guadalajara,gasolina_98_e5,1.9985,44
+2026-10-01,Guadalajara,glp,1.0817,6
+2026-10-01,Huelva,gasoleo_a,1.9582,140
+2026-10-01,Huelva,gasoleo_premium,2.0561,59
+2026-10-01,Huelva,gasolina_95_e5,1.8932,135
+2026-10-01,Huelva,gasolina_98_e5,2.0361,47
+2026-10-01,Huelva,glp,1.1271,7
+2026-10-01,Huesca,gasoleo_a,1.918,122
+2026-10-01,Huesca,gasoleo_premium,2.0196,57
+2026-10-01,Huesca,gasolina_95_e5,1.8351,112
+2026-10-01,Huesca,gasolina_98_e5,1.9672,52
+2026-10-01,Huesca,glp,1.1797,3
+2026-10-01,Jaén,gasoleo_a,1.9609,211
+2026-10-01,Jaén,gasoleo_premium,2.0519,101
+2026-10-01,Jaén,gasolina_95_e5,1.8505,207
+2026-10-01,Jaén,gasolina_98_e5,2.006,80
+2026-10-01,Jaén,glp,1.0801,14
+2026-10-01,León,gasoleo_a,1.9552,165
+2026-10-01,León,gasoleo_premium,2.0256,114
+2026-10-01,León,gasolina_95_e5,1.8277,159
+2026-10-01,León,gasolina_98_e5,1.9736,95
+2026-10-01,León,glp,1.16,8
+2026-10-01,Lleida,gasoleo_a,1.8692,180
+2026-10-01,Lleida,gasoleo_premium,1.9731,79
+2026-10-01,Lleida,gasolina_95_e5,1.8181,165
+2026-10-01,Lleida,gasolina_98_e5,1.9675,78
+2026-10-01,Lleida,glp,1.2141,7
+2026-10-01,Lugo,gasoleo_a,1.9678,129
+2026-10-01,Lugo,gasoleo_premium,2.0629,66
+2026-10-01,Lugo,gasolina_95_e5,1.8651,127
+2026-10-01,Lugo,gasolina_98_e5,1.9949,60
+2026-10-01,Lugo,glp,1.1187,7
+2026-10-01,Madrid,gasoleo_a,1.9419,862
+2026-10-01,Madrid,gasoleo_premium,2.021,454
+2026-10-01,Madrid,gasolina_95_e5,1.8136,855
+2026-10-01,Madrid,gasolina_98_e5,1.991,412
+2026-10-01,Madrid,glp,1.0675,135
+2026-10-01,Melilla,gasoleo_a,1.563,12
+2026-10-01,Melilla,gasoleo_premium,1.607,8
+2026-10-01,Melilla,gasolina_95_e5,1.5808,12
+2026-10-01,Murcia,gasoleo_a,1.9089,453
+2026-10-01,Murcia,gasoleo_premium,1.981,236
+2026-10-01,Murcia,gasolina_95_e5,1.8315,431
+2026-10-01,Murcia,gasolina_98_e5,1.9736,235
+2026-10-01,Murcia,glp,1.0769,44
+2026-10-01,Málaga,gasoleo_a,1.9657,305
+2026-10-01,Málaga,gasoleo_premium,2.0614,208
+2026-10-01,Málaga,gasolina_95_e5,1.8421,302
+2026-10-01,Málaga,gasolina_98_e5,1.9889,164
+2026-10-01,Málaga,glp,1.086,34
+2026-10-01,Navarra,gasoleo_a,1.885,240
+2026-10-01,Navarra,gasoleo_premium,2.0026,99
+2026-10-01,Navarra,gasolina_95_e5,1.8507,212
+2026-10-01,Navarra,gasolina_98_e5,2.0227,61
+2026-10-01,Navarra,glp,1.1492,20
+2026-10-01,Ourense,gasoleo_a,1.9535,88
+2026-10-01,Ourense,gasoleo_premium,2.0267,58
+2026-10-01,Ourense,gasolina_95_e5,1.8685,88
+2026-10-01,Ourense,gasolina_98_e5,2.0029,63
+2026-10-01,Ourense,glp,1.1692,5
+2026-10-01,Palencia,gasoleo_a,1.9616,68
+2026-10-01,Palencia,gasoleo_premium,2.0552,45
+2026-10-01,Palencia,gasolina_95_e5,1.8789,66
+2026-10-01,Palencia,gasolina_98_e5,2.0167,38
+2026-10-01,Palencia,glp,1.1755,4
+2026-10-01,Palmas (Las),gasoleo_a,1.6658,256
+2026-10-01,Palmas (Las),gasoleo_premium,1.7697,156
+2026-10-01,Palmas (Las),gasolina_95_e5,1.515,256
+2026-10-01,Palmas (Las),gasolina_98_e5,1.6444,225
+2026-10-01,Palmas (Las),glp,0.9036,19
+2026-10-01,Pontevedra,gasoleo_a,1.9435,226
+2026-10-01,Pontevedra,gasoleo_premium,2.0413,143
+2026-10-01,Pontevedra,gasolina_95_e5,1.8562,224
+2026-10-01,Pontevedra,gasolina_98_e5,2.0256,135
+2026-10-01,Pontevedra,glp,1.1494,19
+2026-10-01,Rioja (La),gasoleo_a,1.9207,82
+2026-10-01,Rioja (La),gasoleo_premium,2.0239,38
+2026-10-01,Rioja (La),gasolina_95_e5,1.8562,79
+2026-10-01,Rioja (La),gasolina_98_e5,2.0095,36
+2026-10-01,Rioja (La),glp,1.1994,5
+2026-10-01,Salamanca,gasoleo_a,1.928,109
+2026-10-01,Salamanca,gasoleo_premium,2.0236,63
+2026-10-01,Salamanca,gasolina_95_e5,1.8233,105
+2026-10-01,Salamanca,gasolina_98_e5,1.9807,51
+2026-10-01,Salamanca,glp,1.183,8
+2026-10-01,Santa Cruz De Tenerife,gasoleo_a,1.726,241
+2026-10-01,Santa Cruz De Tenerife,gasoleo_premium,1.8184,129
+2026-10-01,Santa Cruz De Tenerife,gasolina_95_e5,1.5743,242
+2026-10-01,Santa Cruz De Tenerife,gasolina_98_e5,1.7015,226
+2026-10-01,Santa Cruz De Tenerife,glp,0.9086,10
+2026-10-01,Segovia,gasoleo_a,1.9399,76
+2026-10-01,Segovia,gasoleo_premium,2.026,43
+2026-10-01,Segovia,gasolina_95_e5,1.8632,75
+2026-10-01,Segovia,gasolina_98_e5,2.0314,37
+2026-10-01,Segovia,glp,1.11,4
+2026-10-01,Sevilla,gasoleo_a,1.9286,440
+2026-10-01,Sevilla,gasoleo_premium,2.0326,235
+2026-10-01,Sevilla,gasolina_95_e5,1.8343,433
+2026-10-01,Sevilla,gasolina_98_e5,1.9973,148
+2026-10-01,Sevilla,glp,1.0709,37
+2026-10-01,Soria,gasoleo_a,1.9074,40
+2026-10-01,Soria,gasoleo_premium,1.9851,20
+2026-10-01,Soria,gasolina_95_e5,1.8294,41
+2026-10-01,Soria,gasolina_98_e5,1.9546,17
+2026-10-01,Soria,glp,1.0762,5
+2026-10-01,Tarragona,gasoleo_a,1.8873,227
+2026-10-01,Tarragona,gasoleo_premium,2.0015,122
+2026-10-01,Tarragona,gasolina_95_e5,1.8264,214
+2026-10-01,Tarragona,gasolina_98_e5,1.972,123
+2026-10-01,Tarragona,glp,1.1025,28
+2026-10-01,Teruel,gasoleo_a,1.8991,67
+2026-10-01,Teruel,gasoleo_premium,2.0207,32
+2026-10-01,Teruel,gasolina_95_e5,1.8548,63
+2026-10-01,Teruel,gasolina_98_e5,1.9842,30
+2026-10-01,Teruel,glp,1.127,4
+2026-10-01,Toledo,gasoleo_a,1.9497,240
+2026-10-01,Toledo,gasoleo_premium,2.0331,117
+2026-10-01,Toledo,gasolina_95_e5,1.8628,235
+2026-10-01,Toledo,gasolina_98_e5,2.0271,117
+2026-10-01,Toledo,glp,1.058,29
+2026-10-01,Valencia / València,gasoleo_a,1.8872,629
+2026-10-01,Valencia / València,gasoleo_premium,1.9901,314
+2026-10-01,Valencia / València,gasolina_95_e5,1.824,613
+2026-10-01,Valencia / València,gasolina_98_e5,2.0079,274
+2026-10-01,Valencia / València,glp,1.0537,50
+2026-10-01,Valladolid,gasoleo_a,1.9331,149
+2026-10-01,Valladolid,gasoleo_premium,2.0218,76
+2026-10-01,Valladolid,gasolina_95_e5,1.8377,144
+2026-10-01,Valladolid,gasolina_98_e5,2.0271,69
+2026-10-01,Valladolid,glp,1.1448,16
+2026-10-01,Zamora,gasoleo_a,1.9426,85
+2026-10-01,Zamora,gasoleo_premium,2.0529,50
+2026-10-01,Zamora,gasolina_95_e5,1.8646,79
+2026-10-01,Zamora,gasolina_98_e5,2.0135,44
+2026-10-01,Zamora,glp,1.0978,5
+2026-10-01,Zaragoza,gasoleo_a,1.9094,230
+2026-10-01,Zaragoza,gasoleo_premium,1.9926,85
+2026-10-01,Zaragoza,gasolina_95_e5,1.8403,217
+2026-10-01,Zaragoza,gasolina_98_e5,1.9884,92
+2026-10-01,Zaragoza,glp,1.1055,11
+2026-10-01,Ávila,gasoleo_a,1.9843,69
+2026-10-01,Ávila,gasoleo_premium,2.0815,43
+2026-10-01,Ávila,gasolina_95_e5,1.8894,68
+2026-10-01,Ávila,gasolina_98_e5,2.0163,32
+2026-10-01,Ávila,glp,1.159,3
